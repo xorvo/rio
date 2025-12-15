@@ -4,7 +4,7 @@
   phx-window-keydown="keydown"
   phx-hook="MindMapCanvas"
   data-root-id={@root.id}
->
+><div id="disable-tab-helper" phx-hook="DisableTab" style="display:none;"></div>
   <%!-- Breadcrumb navigation --%>
   <div :if={@ancestors != []} class="mind-map-breadcrumb">
     <.link navigate={~p"/"} class="text-base-content/60 hover:text-primary">
@@ -25,9 +25,6 @@
     <.link :if={@ancestors != []} navigate={~p"/"} class="btn btn-ghost btn-sm">
       <span class="text-lg">←</span> Home
     </.link>
-    <button phx-click="add_node_inline" class="btn btn-primary btn-sm">
-      + Add Node
-    </button>
     <div class="flex-1"></div>
     <div class="dropdown dropdown-end">
       <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1">
@@ -218,6 +215,8 @@
     <span class="kbd kbd-xs">Enter</span> details
     <span class="mx-2">·</span>
     <span class="kbd kbd-xs">o</span> add
+    <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">t</span> todo
     <span class="mx-2">·</span>
     <span class="kbd kbd-xs">f</span> focus
     <span class="mx-2">·</span>

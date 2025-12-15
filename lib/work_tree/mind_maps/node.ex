@@ -33,6 +33,27 @@ defmodule WorkTree.MindMaps.Node do
     |> validate_url(:link)
   end
 
+  @doc """
+  Changeset for inline node creation where title starts empty.
+  Used when creating nodes that will be edited immediately.
+  """
+  def inline_changeset(node, attrs) do
+    node
+    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link])
+    |> validate_required([:path, :position, :depth])
+    |> validate_number(:priority, greater_than_or_equal_to: 0)
+    |> validate_url(:link)
+    |> put_default_title()
+  end
+
+  defp put_default_title(changeset) do
+    case get_field(changeset, :title) do
+      nil -> put_change(changeset, :title, "")
+      "" -> changeset
+      _ -> changeset
+    end
+  end
+
   defp validate_url(changeset, field) do
     validate_change(changeset, field, fn _field, value ->
       case value do

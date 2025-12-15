@@ -195,39 +195,12 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     end
   end
 
-  def handle_event("cancel_inline_edit", %{"id" => id}, socket) do
-    node_id = String.to_integer(id)
-    node = MindMaps.get_node!(node_id)
-
-    # If the node has a placeholder title, delete it
-    if node.title == "New node" do
-      {:ok, _} = MindMaps.delete_node(node)
-
-      {:noreply,
-       socket
-       |> reload_tree()
-       |> assign(:editing_node_id, nil)
-       |> assign(:focused_node_id, node.parent_id || socket.assigns.root.id)}
-    else
-      {:noreply, assign(socket, :editing_node_id, nil)}
-    end
+  def handle_event("cancel_inline_edit", %{"id" => _id}, socket) do
+    {:noreply, assign(socket, :editing_node_id, nil)}
   end
 
-  def handle_event("inline_edit_keydown", %{"key" => "Escape", "id" => id}, socket) do
-    node_id = String.to_integer(id)
-    node = MindMaps.get_node!(node_id)
-
-    if node.title == "New node" do
-      {:ok, _} = MindMaps.delete_node(node)
-
-      {:noreply,
-       socket
-       |> reload_tree()
-       |> assign(:editing_node_id, nil)
-       |> assign(:focused_node_id, node.parent_id || socket.assigns.root.id)}
-    else
-      {:noreply, assign(socket, :editing_node_id, nil)}
-    end
+  def handle_event("inline_edit_keydown", %{"key" => "Escape", "id" => _id}, socket) do
+    {:noreply, assign(socket, :editing_node_id, nil)}
   end
 
   def handle_event("inline_edit_keydown", _params, socket) do
@@ -275,6 +248,18 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   def handle_event("add_node_inline", _, socket) do
     parent_id = socket.assigns.focused_node_id
+    {:ok, new_node} = MindMaps.create_child_node(parent_id, %{"title" => "New node"})
+
+    {:noreply,
+     socket
+     |> reload_tree()
+     |> assign(:focused_node_id, new_node.id)
+     |> assign(:editing_node_id, new_node.id)
+     |> push_event("scroll-to-node", %{id: new_node.id})}
+  end
+
+  def handle_event("add_child_node", %{"parent-id" => parent_id}, socket) do
+    parent_id = String.to_integer(parent_id)
     {:ok, new_node} = MindMaps.create_child_node(parent_id, %{"title" => "New node"})
 
     {:noreply,

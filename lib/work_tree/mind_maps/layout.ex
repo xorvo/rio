@@ -7,7 +7,7 @@ defmodule WorkTree.MindMaps.Layout do
   @node_width 200
   @min_node_height 44
   @horizontal_gap 60
-  @vertical_gap 20
+  @vertical_gap 36
 
   # Layout calculation constants
   # With 200px width and ~14px padding each side, we have ~172px text width

@@ -86,6 +86,22 @@ defmodule WorkTree.MindMaps do
   end
 
   def create_child_node(%Node{} = parent, attrs) do
+    do_create_child_node(parent, attrs, &Node.changeset/2)
+  end
+
+  @doc """
+  Creates a child node for inline editing (title can be empty initially).
+  """
+  def create_inline_child_node(parent_id, attrs) when is_integer(parent_id) do
+    parent = get_node!(parent_id)
+    create_inline_child_node(parent, attrs)
+  end
+
+  def create_inline_child_node(%Node{} = parent, attrs) do
+    do_create_child_node(parent, attrs, &Node.inline_changeset/2)
+  end
+
+  defp do_create_child_node(%Node{} = parent, attrs, changeset_fn) do
     position = Repo.one(Tree.next_child_position(parent)) || 0
     depth = Tree.calculate_depth(parent)
     # Ensure consistent string keys to avoid mixed key errors
@@ -94,7 +110,7 @@ defmodule WorkTree.MindMaps do
     Repo.transaction(fn ->
       {:ok, node} =
         %Node{}
-        |> Node.changeset(Map.merge(attrs, %{
+        |> changeset_fn.(Map.merge(attrs, %{
           "parent_id" => parent.id,
           "path" => "temp",
           "position" => position,
@@ -104,7 +120,7 @@ defmodule WorkTree.MindMaps do
 
       node =
         node
-        |> Node.changeset(%{"path" => Tree.build_path(parent, node.id)})
+        |> changeset_fn.(%{"path" => Tree.build_path(parent, node.id)})
         |> Repo.update!()
 
       # Record creation event

@@ -39,7 +39,8 @@ const Hooks = {
     mounted() {
       const textarea = this.el
       textarea.focus()
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length)
+      // Select all text so user can start typing to replace
+      textarea.select()
 
       textarea.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {

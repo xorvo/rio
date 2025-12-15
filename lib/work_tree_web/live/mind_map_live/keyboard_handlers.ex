@@ -57,13 +57,19 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
      |> assign(:editing_node_id, new_node.id)}
   end
 
-  # 't' to toggle todo state
+  # 't' to toggle todo state (converts to todo if not already)
   def handle_key(socket, "t", opts) do
     reload_fn = Keyword.fetch!(opts, :reload_fn)
     node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
 
-    if node && node.is_todo do
-      {:ok, _} = MindMaps.toggle_todo(node)
+    if node do
+      if node.is_todo do
+        # Toggle completion status
+        {:ok, _} = MindMaps.toggle_todo(node)
+      else
+        # Convert to todo
+        {:ok, _} = MindMaps.update_node(node, %{is_todo: true})
+      end
       {:noreply, reload_fn.(socket)}
     else
       {:noreply, socket}
