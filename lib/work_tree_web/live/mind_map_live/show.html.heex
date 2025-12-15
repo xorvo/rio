@@ -137,6 +137,7 @@
         phx-value-id={node.id}
         phx-hook="NodeContextMenu"
         data-node-id={node.id}
+        data-node-link={node.link}
       >
         <%= if @editing_node_id == node.id do %>
           <form phx-submit="save_inline_edit" phx-value-id={node.id} class="h-full">
@@ -158,6 +159,19 @@
         <div :if={node.is_todo} class="mind-map-todo-indicator">
           <%= if node.todo_completed, do: "✓", else: "○" %>
         </div>
+        <a
+          :if={node.link}
+          href={node.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mind-map-link-indicator"
+          title={node.link}
+          onclick="event.stopPropagation()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
       </div>
     <% end %>
   </div>
@@ -207,13 +221,11 @@
     <span class="mx-2">·</span>
     <span class="kbd kbd-xs">f</span> focus
     <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">t</span> toggle todo
+    <span class="kbd kbd-xs">a</span> link
+    <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">g</span> open
     <span class="mx-2">·</span>
     <span class="kbd kbd-xs">⌫</span> delete
-    <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">Space</span>+drag pan
-    <span class="mx-2">·</span>
-    scroll zoom
   </div>
 
   <%!-- Undo toast notification --%>
@@ -239,28 +251,38 @@
 
 <%!-- Node detail modal --%>
 <.modal :if={@selected_node} id="node-detail-modal" show on_cancel={JS.push("close_detail")}>
-  <div class="space-y-4">
-    <div class="flex justify-between items-start">
-      <h3 class="text-xl font-semibold flex items-center gap-2">
-        <span :if={@selected_node.is_todo} class={"text-lg #{if @selected_node.todo_completed, do: "text-success", else: "text-base-content/50"}"}>
+  <div class="space-y-5">
+    <%!-- Header --%>
+    <div>
+      <h3 class="text-base font-semibold text-base-content flex items-center gap-2">
+        <span :if={@selected_node.is_todo} class={"text-base #{if @selected_node.todo_completed, do: "text-success", else: "text-base-content/40"}"}>
           <%= if @selected_node.todo_completed, do: "☑", else: "☐" %>
         </span>
         <%= @selected_node.title %>
       </h3>
+      <p :if={@selected_node.link} class="mt-1.5 text-xs text-info truncate">
+        <a href={@selected_node.link} target="_blank" rel="noopener noreferrer" class="hover:underline">
+          <%= @selected_node.link %>
+        </a>
+      </p>
     </div>
 
-    <div :if={@selected_node.body["content"]} class="prose prose-sm">
-      <p><%= @selected_node.body["content"] %></p>
+    <%!-- Content --%>
+    <div :if={@selected_node.body["content"]} class="prose prose-sm max-w-none">
+      <p class="text-base-content/80"><%= @selected_node.body["content"] %></p>
     </div>
 
-    <div :if={@selected_node.edge_label} class="text-sm text-base-content/60">
-      <span class="font-medium">Edge label:</span> <%= @selected_node.edge_label %>
+    <%!-- Metadata --%>
+    <div :if={@selected_node.edge_label} class="text-sm">
+      <span class="text-base-content/50">Edge label:</span>
+      <span class="ml-1 text-base-content/80"><%= @selected_node.edge_label %></span>
     </div>
 
+    <%!-- Actions --%>
     <div class="border-t border-base-300 pt-4 flex flex-wrap gap-2">
       <.link
         patch={~p"/node/#{@root.id}/edit/#{@selected_node.id}"}
-        class="btn btn-sm btn-ghost"
+        class="btn btn-sm btn-outline"
       >
         Edit
       </.link>
@@ -268,17 +290,18 @@
         :if={@selected_node.is_todo}
         phx-click="toggle_todo"
         phx-value-id={@selected_node.id}
-        class="btn btn-sm btn-ghost"
+        class="btn btn-sm btn-outline"
       >
         <%= if @selected_node.todo_completed, do: "Mark incomplete", else: "Mark complete" %>
       </button>
       <button
         phx-click="focus_subtree"
         phx-value-id={@selected_node.id}
-        class="btn btn-sm btn-ghost"
+        class="btn btn-sm btn-outline"
       >
         Focus subtree
       </button>
+      <div class="flex-1"></div>
       <button
         :if={@selected_node.id != @root.id}
         phx-click="delete_node"
@@ -302,4 +325,49 @@
     parent_id={@focused_node_id}
     patch={~p"/node/#{@root.id}"}
   />
+</.modal>
+
+<%!-- Link edit modal --%>
+<.modal :if={@link_edit_node} id="link-modal" show on_cancel={JS.push("close_link_modal")}>
+  <div class="space-y-5">
+    <div>
+      <h3 class="text-base font-semibold text-base-content">
+        <%= if @link_edit_node.link, do: "Edit Link", else: "Add Link" %>
+      </h3>
+      <p class="mt-1 text-xs text-base-content/60">
+        Attach a URL to "<%= @link_edit_node.title %>"
+      </p>
+    </div>
+
+    <form phx-submit="save_link" phx-change="validate_link" class="space-y-6">
+      <div>
+        <label for="link-input" class="block text-sm font-medium text-base-content mb-2">
+          URL
+        </label>
+        <input
+          type="url"
+          name="link"
+          value={@link_edit_node.link || ""}
+          placeholder="https://example.com"
+          class="input input-bordered w-full"
+          phx-hook="FocusEnd"
+          id="link-input"
+          pattern="https?://.*"
+          title="URL must start with http:// or https://"
+        />
+        <p class="mt-2 text-xs text-base-content/50">
+          Leave empty to remove the link
+        </p>
+      </div>
+
+      <div class="flex gap-3 justify-end pt-2">
+        <button type="button" phx-click="close_link_modal" class="btn btn-ghost">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Save Link
+        </button>
+      </div>
+    </form>
+  </div>
 </.modal>

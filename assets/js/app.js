@@ -138,6 +138,19 @@ const Hooks = {
         this.scrollToNode(id)
       })
 
+      // Listen for open-focused-node-link events from LiveView (keyboard shortcut 'g')
+      // We read the link from the DOM data attribute to open it directly
+      this.handleEvent("open-focused-node-link", ({ node_id }) => {
+        const nodeEl = this.canvas?.querySelector(`#node-${node_id}`)
+        const url = nodeEl?.dataset?.nodeLink
+        console.log("open-focused-node-link event for node:", node_id, "URL:", url)
+        if (url) {
+          // Open using window.open - since we're triggered by keyboard,
+          // browser might still block, but we try our best
+          window.open(url, '_blank', 'noopener,noreferrer')
+        }
+      })
+
       // Expose hook methods for onclick handlers
       this.el.__liveViewHook = this
     },
@@ -238,8 +251,11 @@ const Hooks = {
     },
 
     handleKeyDown(e) {
+      // Check if target is an input/textarea (with safety check for non-element targets)
+      const isInputTarget = e.target?.matches?.("input, textarea")
+
       // Space key for pan mode
-      if (e.code === "Space" && !e.target.matches("input, textarea")) {
+      if (e.code === "Space" && !isInputTarget) {
         if (!this.spacePressed) {
           this.spacePressed = true
           this.el.style.cursor = "grab"
@@ -247,7 +263,7 @@ const Hooks = {
       }
 
       // Zoom shortcuts (only when not in input)
-      if (!e.target.matches("input, textarea")) {
+      if (!isInputTarget) {
         if (e.key === "=" || e.key === "+") {
           e.preventDefault()
           this.zoomTo(this.zoom + this.zoomStep)

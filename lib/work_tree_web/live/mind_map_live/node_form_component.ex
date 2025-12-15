@@ -6,8 +6,10 @@ defmodule WorkTreeWeb.MindMapLive.NodeFormComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
-      <h3 class="text-lg font-semibold mb-4"><%= @title %></h3>
+    <div class="space-y-5">
+      <div>
+        <h3 class="text-base font-semibold text-base-content"><%= @title %></h3>
+      </div>
 
       <.form
         for={@form}
@@ -15,69 +17,74 @@ defmodule WorkTreeWeb.MindMapLive.NodeFormComponent do
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
+        class="space-y-6"
       >
-        <div class="space-y-4">
-          <div>
-            <label class="label">
-              <span class="label-text">Title</span>
-            </label>
-            <input
-              type="text"
-              name={@form[:title].name}
-              value={@form[:title].value}
-              class={["input input-bordered w-full", @form[:title].errors != [] && "input-error"]}
-              placeholder="Enter title..."
-              phx-debounce="300"
-            />
-            <p :for={{msg, _opts} <- @form[:title].errors} class="text-error text-sm mt-1">
-              <%= msg %>
-            </p>
-          </div>
-
-          <div>
-            <label class="label">
-              <span class="label-text">Body (optional)</span>
-            </label>
-            <textarea
-              name="body_content"
-              class="textarea textarea-bordered w-full h-24"
-              placeholder="Add details..."
-              phx-debounce="300"
-            ><%= get_body_content(@form) %></textarea>
-          </div>
-
-          <div class="form-control">
-            <label class="label cursor-pointer justify-start gap-3">
-              <input
-                type="checkbox"
-                name={@form[:is_todo].name}
-                checked={@form[:is_todo].value}
-                class="checkbox checkbox-primary"
-              />
-              <span class="label-text">Mark as TODO item</span>
-            </label>
-          </div>
-
-          <div :if={@action != :new_root} class="form-control">
-            <label class="label">
-              <span class="label-text">Edge Label (optional)</span>
-            </label>
-            <input
-              type="text"
-              name={@form[:edge_label].name}
-              value={@form[:edge_label].value}
-              class="input input-bordered w-full input-sm"
-              placeholder="Label on connecting line..."
-            />
-          </div>
+        <div>
+          <label for="node-title" class="block text-sm font-medium text-base-content mb-2">
+            Title
+          </label>
+          <input
+            type="text"
+            id="node-title"
+            name={@form[:title].name}
+            value={@form[:title].value}
+            class={["input input-bordered w-full", @form[:title].errors != [] && "input-error"]}
+            placeholder="Enter title..."
+            phx-debounce="300"
+          />
+          <p :for={{msg, _opts} <- @form[:title].errors} class="text-error text-sm mt-2">
+            <%= msg %>
+          </p>
         </div>
 
-        <div class="modal-action">
+        <div>
+          <label for="node-body" class="block text-sm font-medium text-base-content mb-2">
+            Body
+            <span class="font-normal text-base-content/50">(optional)</span>
+          </label>
+          <textarea
+            id="node-body"
+            name="body_content"
+            class="textarea textarea-bordered w-full h-24"
+            placeholder="Add details..."
+            phx-debounce="300"
+          ><%= get_body_content(@form) %></textarea>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="node-is-todo"
+            name={@form[:is_todo].name}
+            checked={@form[:is_todo].value}
+            class="checkbox checkbox-primary"
+          />
+          <label for="node-is-todo" class="text-sm text-base-content cursor-pointer">
+            Mark as TODO item
+          </label>
+        </div>
+
+        <div :if={@action != :new_root}>
+          <label for="node-edge-label" class="block text-sm font-medium text-base-content mb-2">
+            Edge Label
+            <span class="font-normal text-base-content/50">(optional)</span>
+          </label>
+          <input
+            type="text"
+            id="node-edge-label"
+            name={@form[:edge_label].name}
+            value={@form[:edge_label].value}
+            class="input input-bordered w-full input-sm"
+            placeholder="Label on connecting line..."
+          />
+        </div>
+
+        <div class="flex gap-3 justify-end pt-2 border-t border-base-300">
           <button type="button" class="btn btn-ghost" phx-click={JS.exec("data-cancel", to: "#node-form")}>
             Cancel
           </button>
           <button type="submit" class="btn btn-primary" phx-disable-with="Saving...">
-            Save
+            Save Changes
           </button>
         </div>
       </.form>

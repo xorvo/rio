@@ -81,6 +81,18 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
     end
   end
 
+  # 'a' to attach/edit link
+  def handle_key(socket, "a", _opts) do
+    node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
+    {:noreply, assign(socket, :link_edit_node, node)}
+  end
+
+  # 'g' to go to (open) link - handled via JS hook reading data-node-link attribute
+  def handle_key(socket, "g", _opts) do
+    focused_id = socket.assigns.focused_node_id
+    {:noreply, Phoenix.LiveView.push_event(socket, "open-focused-node-link", %{node_id: focused_id})}
+  end
+
   # Ignore tab
   def handle_key(socket, "Tab", _opts), do: {:noreply, socket}
 

@@ -32,7 +32,8 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:page_title, root.title)
      |> assign(:deleted_node, nil)
      |> assign(:undo_timer, nil)
-     |> assign(:editing_node_id, nil)}
+     |> assign(:editing_node_id, nil)
+     |> assign(:link_edit_node, nil)}
   end
 
   defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)
@@ -154,8 +155,13 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   end
 
   def handle_event("keydown", %{"key" => key}, socket) do
-    # Ignore keyboard shortcuts while editing a node title
-    if socket.assigns.editing_node_id do
+    # Ignore keyboard shortcuts while any modal or input is active
+    modal_active = socket.assigns.editing_node_id ||
+                   socket.assigns.link_edit_node ||
+                   socket.assigns.selected_node ||
+                   socket.assigns.modal_action
+
+    if modal_active do
       {:noreply, socket}
     else
       KeyboardHandlers.handle_key(socket, key,
@@ -277,6 +283,49 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:focused_node_id, new_node.id)
      |> assign(:editing_node_id, new_node.id)
      |> push_event("scroll-to-node", %{id: new_node.id})}
+  end
+
+  def handle_event("open_link_modal", %{"id" => id}, socket) do
+    node = Enum.find(socket.assigns.nodes, &(&1.id == String.to_integer(id)))
+    {:noreply, assign(socket, :link_edit_node, node)}
+  end
+
+  def handle_event("close_link_modal", _, socket) do
+    {:noreply, assign(socket, :link_edit_node, nil)}
+  end
+
+  def handle_event("save_link", %{"link" => link}, socket) do
+    node = socket.assigns.link_edit_node
+    link = String.trim(link)
+
+    # Allow empty string to clear the link
+    link_value = if link == "", do: nil, else: link
+
+    case MindMaps.update_node(node, %{link: link_value}) do
+      {:ok, _updated_node} ->
+        {:noreply,
+         socket
+         |> reload_tree()
+         |> assign(:link_edit_node, nil)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Invalid URL. Must start with http:// or https://")}
+    end
+  end
+
+  def handle_event("validate_link", _params, socket) do
+    # Just ignore validation for now - HTML5 validation handles it
+    {:noreply, socket}
+  end
+
+  def handle_event("open_node_link", %{"id" => id}, socket) do
+    node = Enum.find(socket.assigns.nodes, &(&1.id == String.to_integer(id)))
+
+    if node && node.link do
+      {:noreply, push_event(socket, "open-link", %{url: node.link})}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
