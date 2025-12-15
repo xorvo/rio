@@ -111,10 +111,59 @@ const Hooks = {
       })
     }
   },
+  SearchModal: {
+    mounted() {
+      this.input = this.el.querySelector("#search-input")
+
+      // Focus the input when modal opens
+      if (this.input) {
+        this.input.focus()
+      }
+
+      // Handle keyboard navigation
+      this.handleKeydown = (e) => {
+        if (e.key === "ArrowDown") {
+          e.preventDefault()
+          e.stopPropagation()
+          this.pushEvent("search_select_next", {})
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault()
+          e.stopPropagation()
+          this.pushEvent("search_select_prev", {})
+        } else if (e.key === "Enter") {
+          e.preventDefault()
+          e.stopPropagation()
+          this.pushEvent("search_confirm", {})
+        }
+      }
+
+      this.el.addEventListener("keydown", this.handleKeydown)
+    },
+
+    updated() {
+      // Keep focus on input after updates
+      if (this.input && document.activeElement !== this.input) {
+        this.input.focus()
+      }
+    },
+
+    destroyed() {
+      this.el.removeEventListener("keydown", this.handleKeydown)
+    }
+  },
   MindMapCanvas: {
     mounted() {
       this.canvas = this.el.querySelector("#mind-map-canvas")
       this.rootId = this.el.dataset.rootId
+
+      // Handle Cmd+P / Ctrl+P to open search (need to prevent browser print dialog)
+      this.handleCmdP = (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+          e.preventDefault()
+          this.pushEvent("open_search", {})
+        }
+      }
+      window.addEventListener("keydown", this.handleCmdP)
 
       // Viewport state
       this.panX = 0
@@ -194,6 +243,7 @@ const Hooks = {
       window.removeEventListener("mousemove", this.handleMouseMove)
       window.removeEventListener("mouseup", this.handleMouseUp)
       window.removeEventListener("keydown", this.handleKeyDown)
+      window.removeEventListener("keydown", this.handleCmdP)
       if (this.saveTimer) clearTimeout(this.saveTimer)
     },
 

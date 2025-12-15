@@ -3,6 +3,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   alias WorkTree.MindMaps
   alias WorkTree.MindMaps.Layout
+  alias WorkTree.FuzzySearch
   alias WorkTreeWeb.MindMapLive.{Navigation, KeyboardHandlers}
 
   # Undo timeout in milliseconds
@@ -35,7 +36,12 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:editing_node_id, nil)
      |> assign(:link_edit_node, nil)
      |> assign(:context_menu, nil)
-     |> assign(:hints_expanded, false)}
+     |> assign(:hints_expanded, false)
+     |> assign(:search_open, false)
+     |> assign(:search_query, "")
+     |> assign(:search_results, [])
+     |> assign(:global_search_results, [])
+     |> assign(:search_selected_index, 0)}
   end
 
   defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)
@@ -156,20 +162,29 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     {:noreply, push_navigate(socket, to: ~p"/node/#{id}")}
   end
 
-  def handle_event("keydown", %{"key" => key}, socket) do
-    # Ignore keyboard shortcuts while any modal or input is active
-    modal_active = socket.assigns.editing_node_id ||
-                   socket.assigns.link_edit_node ||
-                   socket.assigns.selected_node ||
-                   socket.assigns.modal_action
+  def handle_event("keydown", %{"key" => key} = params, socket) do
+    meta_key = params["metaKey"] || false
+    ctrl_key = params["ctrlKey"] || false
 
-    if modal_active do
-      {:noreply, socket}
+    # Handle Cmd+P / Ctrl+P to open search (works globally)
+    if key == "p" and (meta_key or ctrl_key) do
+      {:noreply, assign(socket, :search_open, true)}
     else
-      KeyboardHandlers.handle_key(socket, key,
-        delete_fn: &delete_node_with_undo/2,
-        reload_fn: &reload_tree/1
-      )
+      # Ignore keyboard shortcuts while any modal or input is active
+      modal_active = socket.assigns.editing_node_id ||
+                     socket.assigns.link_edit_node ||
+                     socket.assigns.selected_node ||
+                     socket.assigns.modal_action ||
+                     socket.assigns.search_open
+
+      if modal_active do
+        {:noreply, socket}
+      else
+        KeyboardHandlers.handle_key(socket, key,
+          delete_fn: &delete_node_with_undo/2,
+          reload_fn: &reload_tree/1
+        )
+      end
     end
   end
 
@@ -328,6 +343,152 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   def handle_event("close_context_menu", _, socket) do
     {:noreply, assign(socket, :context_menu, nil)}
+  end
+
+  # Search events
+  def handle_event("open_search", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_open, true)
+     |> assign(:search_query, "")
+     |> assign(:search_results, [])
+     |> assign(:global_search_results, [])
+     |> assign(:search_selected_index, 0)}
+  end
+
+  def handle_event("close_search", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_open, false)
+     |> assign(:search_query, "")
+     |> assign(:search_results, [])
+     |> assign(:global_search_results, [])
+     |> assign(:search_selected_index, 0)}
+  end
+
+  def handle_event("search", %{"query" => query}, socket) do
+    query = String.trim(query)
+
+    if query == "" do
+      {:noreply,
+       socket
+       |> assign(:search_query, "")
+       |> assign(:search_results, [])
+       |> assign(:global_search_results, [])
+       |> assign(:search_selected_index, 0)}
+    else
+      # Build ancestry map for local nodes
+      local_nodes = socket.assigns.nodes
+      local_ancestry_map = FuzzySearch.build_ancestry_map(local_nodes)
+      local_results = FuzzySearch.search(local_nodes, query, ancestry_map: local_ancestry_map)
+      local_node_ids = MapSet.new(local_nodes, & &1.id)
+
+      # Get global nodes (excluding local subtree)
+      all_nodes = MindMaps.get_all_nodes()
+      global_nodes = Enum.reject(all_nodes, fn node -> MapSet.member?(local_node_ids, node.id) end)
+      global_ancestry_map = FuzzySearch.build_ancestry_map(global_nodes)
+      global_results = FuzzySearch.search(global_nodes, query, ancestry_map: global_ancestry_map)
+
+      {:noreply,
+       socket
+       |> assign(:search_query, query)
+       |> assign(:search_results, local_results)
+       |> assign(:global_search_results, global_results)
+       |> assign(:search_selected_index, 0)}
+    end
+  end
+
+  def handle_event("search_select_prev", _, socket) do
+    current = socket.assigns.search_selected_index
+    results_count = total_search_results_count(socket)
+
+    new_index =
+      if results_count > 0 do
+        rem(current - 1 + results_count, results_count)
+      else
+        0
+      end
+
+    {:noreply, assign(socket, :search_selected_index, new_index)}
+  end
+
+  def handle_event("search_select_next", _, socket) do
+    current = socket.assigns.search_selected_index
+    results_count = total_search_results_count(socket)
+
+    new_index =
+      if results_count > 0 do
+        rem(current + 1, results_count)
+      else
+        0
+      end
+
+    {:noreply, assign(socket, :search_selected_index, new_index)}
+  end
+
+  def handle_event("search_go_to_result", %{"index" => index}, socket) do
+    index = if is_binary(index), do: String.to_integer(index), else: index
+    go_to_search_result(socket, index)
+  end
+
+  def handle_event("search_select_index", %{"index" => index}, socket) do
+    index = if is_binary(index), do: String.to_integer(index), else: index
+    {:noreply, assign(socket, :search_selected_index, index)}
+  end
+
+  def handle_event("search_confirm", _, socket) do
+    index = socket.assigns.search_selected_index
+    go_to_search_result(socket, index)
+  end
+
+  defp total_search_results_count(socket) do
+    length(socket.assigns.search_results) + length(socket.assigns.global_search_results)
+  end
+
+  defp get_search_result_at(socket, index) do
+    local_results = socket.assigns.search_results
+    local_count = length(local_results)
+
+    if index < local_count do
+      Enum.at(local_results, index)
+    else
+      global_index = index - local_count
+      Enum.at(socket.assigns.global_search_results, global_index)
+    end
+  end
+
+  defp go_to_search_result(socket, index) do
+    case get_search_result_at(socket, index) do
+      {node, _score, _highlights, _ancestry} ->
+        # Check if node is in the current subtree
+        local_node_ids = MapSet.new(socket.assigns.nodes, & &1.id)
+        is_local = MapSet.member?(local_node_ids, node.id)
+
+        if is_local do
+          {:noreply,
+           socket
+           |> assign(:search_open, false)
+           |> assign(:search_query, "")
+           |> assign(:search_results, [])
+           |> assign(:global_search_results, [])
+           |> assign(:search_selected_index, 0)
+           |> assign(:focused_node_id, node.id)
+           |> push_event("scroll-to-node", %{id: node.id})}
+        else
+          # Navigate to the node's parent view
+          {:noreply,
+           socket
+           |> assign(:search_open, false)
+           |> assign(:search_query, "")
+           |> assign(:search_results, [])
+           |> assign(:global_search_results, [])
+           |> assign(:search_selected_index, 0)
+           |> push_navigate(to: ~p"/node/#{node.id}")}
+        end
+
+      nil ->
+        {:noreply, socket}
+    end
   end
 
   @impl true
@@ -506,4 +667,82 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   defp priority_color(2), do: "priority-p2"
   defp priority_color(3), do: "priority-p3"
   defp priority_color(_), do: ""
+
+  # Helper to highlight text with match ranges
+  defp highlight_text(text, []), do: text
+
+  defp highlight_text(text, ranges) when is_binary(text) do
+    graphemes = String.graphemes(text)
+    total_len = length(graphemes)
+
+    # Sort ranges by start position
+    sorted_ranges = Enum.sort_by(ranges, fn {start, _stop} -> start end)
+
+    # Build segments with highlight info
+    {segments, last_pos} =
+      Enum.reduce(sorted_ranges, {[], 0}, fn {start, stop}, {acc, pos} ->
+        # Clamp positions to valid range
+        start = max(0, min(start, total_len))
+        stop = max(0, min(stop, total_len))
+
+        if start >= stop or start < pos do
+          {acc, pos}
+        else
+          # Add non-highlighted segment before this range
+          before =
+            if start > pos do
+              [{:text, Enum.slice(graphemes, pos, start - pos) |> Enum.join()}]
+            else
+              []
+            end
+
+          # Add highlighted segment
+          highlighted = [{:highlight, Enum.slice(graphemes, start, stop - start) |> Enum.join()}]
+
+          {acc ++ before ++ highlighted, stop}
+        end
+      end)
+
+    # Add remaining text after last highlight
+    final_segments =
+      if last_pos < total_len do
+        segments ++ [{:text, Enum.slice(graphemes, last_pos, total_len - last_pos) |> Enum.join()}]
+      else
+        segments
+      end
+
+    # Convert to Phoenix HTML
+    Phoenix.HTML.raw(
+      Enum.map(final_segments, fn
+        {:text, str} -> Phoenix.HTML.html_escape(str) |> Phoenix.HTML.safe_to_string()
+        {:highlight, str} -> "<mark class=\"search-highlight\">#{Phoenix.HTML.html_escape(str) |> Phoenix.HTML.safe_to_string()}</mark>"
+      end)
+      |> Enum.join()
+    )
+  end
+
+  # Helper to truncate body text
+  defp truncate_body(nil), do: ""
+  defp truncate_body(text) when is_binary(text) do
+    if String.length(text) > 100 do
+      String.slice(text, 0, 100) <> "..."
+    else
+      text
+    end
+  end
+  defp truncate_body(_), do: ""
+
+  # Helper to format ancestry path for display
+  defp format_ancestry([]), do: ""
+  defp format_ancestry(ancestors) when is_list(ancestors) do
+    # Show truncated path: first / ... / last two
+    case length(ancestors) do
+      1 -> Enum.at(ancestors, 0)
+      2 -> Enum.join(ancestors, " / ")
+      _ ->
+        first = Enum.at(ancestors, 0)
+        last_two = Enum.take(ancestors, -2)
+        "#{first} / ... / #{Enum.join(last_two, " / ")}"
+    end
+  end
 end

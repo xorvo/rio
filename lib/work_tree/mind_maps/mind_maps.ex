@@ -245,6 +245,15 @@ defmodule WorkTree.MindMaps do
   end
 
   @doc """
+  Gets all nodes in the database (for global search).
+  """
+  def get_all_nodes do
+    Node
+    |> order_by([n], [n.depth, n.path, n.position])
+    |> Repo.all()
+  end
+
+  @doc """
   Reorders children of a parent node.
   Takes a list of node IDs in the desired order.
   """

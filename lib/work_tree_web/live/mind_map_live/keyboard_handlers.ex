@@ -128,6 +128,11 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
     {:noreply, assign(socket, :hints_expanded, !socket.assigns.hints_expanded)}
   end
 
+  # 'T' (Shift+t) to open search
+  def handle_key(socket, "T", _opts) do
+    {:noreply, assign(socket, :search_open, true)}
+  end
+
   # Ignore tab
   def handle_key(socket, "Tab", _opts), do: {:noreply, socket}
 
