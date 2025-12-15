@@ -67,9 +67,37 @@ const Hooks = {
     mounted() {
       this.el.addEventListener("contextmenu", (e) => {
         e.preventDefault()
+        e.stopPropagation()
         const nodeId = this.el.dataset.nodeId
         if (nodeId) {
-          this.pushEvent("open_node_detail", { id: nodeId })
+          // Get viewport dimensions
+          const viewportWidth = window.innerWidth
+          const viewportHeight = window.innerHeight
+
+          // Estimated menu dimensions (w-56 = 224px, typical height ~400px)
+          const menuWidth = 224
+          const menuHeight = 400
+
+          // Calculate position, adjusting if menu would go off-screen
+          let x = e.clientX
+          let y = e.clientY
+
+          // Adjust horizontal position if menu would overflow right edge
+          if (x + menuWidth > viewportWidth - 16) {
+            x = viewportWidth - menuWidth - 16
+          }
+
+          // Adjust vertical position if menu would overflow bottom edge
+          // Account for bottom hints bar (~50px)
+          if (y + menuHeight > viewportHeight - 60) {
+            y = viewportHeight - menuHeight - 60
+          }
+
+          // Ensure menu doesn't go off the top or left edges
+          x = Math.max(16, x)
+          y = Math.max(16, y)
+
+          this.pushEvent("open_context_menu", { id: nodeId, x: x, y: y })
         }
       })
 

@@ -33,7 +33,8 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:deleted_node, nil)
      |> assign(:undo_timer, nil)
      |> assign(:editing_node_id, nil)
-     |> assign(:link_edit_node, nil)}
+     |> assign(:link_edit_node, nil)
+     |> assign(:context_menu, nil)}
   end
 
   defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)
@@ -313,6 +314,21 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     end
   end
 
+  # Context menu events
+  def handle_event("open_context_menu", %{"id" => id, "x" => x, "y" => y}, socket) do
+    id = if is_binary(id), do: String.to_integer(id), else: id
+    node = Enum.find(socket.assigns.nodes, &(&1.id == id))
+
+    {:noreply,
+     socket
+     |> assign(:focused_node_id, id)
+     |> assign(:context_menu, %{node: node, x: x, y: y})}
+  end
+
+  def handle_event("close_context_menu", _, socket) do
+    {:noreply, assign(socket, :context_menu, nil)}
+  end
+
   @impl true
   def handle_info({WorkTreeWeb.MindMapLive.NodeFormComponent, {:saved, _node}}, socket) do
     {:noreply,
@@ -326,6 +342,100 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      socket
      |> assign(:deleted_node, nil)
      |> assign(:undo_timer, nil)}
+  end
+
+  # Context menu action handlers
+  def handle_info({:close_context_menu, _}, socket) do
+    {:noreply, assign(socket, :context_menu, nil)}
+  end
+
+  def handle_info({:context_menu_action, :add_child, node}, socket) do
+    {:ok, new_node} = MindMaps.create_child_node(node.id, %{"title" => "New node"})
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> reload_tree()
+     |> assign(:focused_node_id, new_node.id)
+     |> assign(:editing_node_id, new_node.id)
+     |> push_event("scroll-to-node", %{id: new_node.id})}
+  end
+
+  def handle_info({:context_menu_action, :edit_node, node}, socket) do
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:selected_node, node)}
+  end
+
+  def handle_info({:context_menu_action, :toggle_todo, node}, socket) do
+    # Toggle is_todo status
+    new_is_todo = !node.is_todo
+    {:ok, _} = MindMaps.update_node(node, %{is_todo: new_is_todo, todo_completed: false})
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :toggle_completed, node}, socket) do
+    {:ok, _} = MindMaps.toggle_todo(node)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :set_priority, node, priority}, socket) do
+    {:ok, _} = MindMaps.update_node(node, %{priority: priority})
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :clear_priority, node}, socket) do
+    {:ok, _} = MindMaps.update_node(node, %{priority: nil})
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :edit_link, node}, socket) do
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:link_edit_node, node)}
+  end
+
+  def handle_info({:context_menu_action, :open_link, node}, socket) do
+    socket =
+      if node.link do
+        push_event(socket, "open-link", %{url: node.link})
+      else
+        socket
+      end
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)}
+  end
+
+  def handle_info({:context_menu_action, :focus_subtree, node}, socket) do
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> push_navigate(to: ~p"/node/#{node.id}")}
+  end
+
+  def handle_info({:context_menu_action, :delete_node, node}, socket) do
+    socket = assign(socket, :context_menu, nil)
+    delete_node_with_undo(socket, node)
   end
 
   defp delete_node_with_undo(socket, node) do
@@ -388,4 +498,11 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     mid_x = (edge.source_x + edge.target_x) / 2
     "M #{edge.source_x} #{edge.source_y} C #{mid_x} #{edge.source_y}, #{mid_x} #{edge.target_y}, #{edge.target_x} #{edge.target_y}"
   end
+
+  # Helper to get priority color class
+  defp priority_color(0), do: "priority-p0"
+  defp priority_color(1), do: "priority-p1"
+  defp priority_color(2), do: "priority-p2"
+  defp priority_color(3), do: "priority-p3"
+  defp priority_color(_), do: ""
 end

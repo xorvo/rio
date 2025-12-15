@@ -163,6 +163,43 @@
   opacity: 0.7;
 }
 
+/* Priority badge */
+.mind-map-priority-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 2px 4px oklch(0% 0 0 / 15%);
+}
+
+.mind-map-priority-badge.priority-p0 {
+  background: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.mind-map-priority-badge.priority-p1 {
+  background: var(--color-warning);
+  color: var(--color-warning-content);
+}
+
+.mind-map-priority-badge.priority-p2 {
+  background: var(--color-info);
+  color: var(--color-info-content);
+}
+
+.mind-map-priority-badge.priority-p3 {
+  background: var(--color-success);
+  color: var(--color-success-content);
+}
+
 /* Link indicator */
 .mind-map-link-indicator {
   position: absolute;
@@ -234,21 +271,29 @@
   animation: node-appear 0.2s ease-out;
 }
 
-/* Zoom controls (for future) */
+/* Zoom controls */
 .mind-map-controls {
   position: fixed;
-  bottom: 16px;
+  bottom: 60px;
   right: 16px;
   z-index: 20;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
   background: oklch(from var(--color-base-100) l c h / 95%);
   backdrop-filter: blur(8px);
-  padding: 8px;
+  padding: 2px;
   border-radius: var(--radius-box);
   border: 1px solid oklch(from var(--color-base-300) l c h);
   box-shadow: 0 2px 8px oklch(0% 0 0 / 8%);
+}
+
+.mind-map-controls span[data-zoom-level] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
 }
 
 /* Undo toast notification */
@@ -313,4 +358,50 @@
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 25%),
               0 4px 16px oklch(0% 0 0 / 12%);
+}
+
+/* Context Menu */
+.context-menu {
+  position: fixed;
+  z-index: 100;
+  animation: context-menu-appear 0.15s ease-out;
+}
+
+@keyframes context-menu-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.context-menu .menu {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.context-menu .menu li button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.context-menu .menu li button .kbd {
+  opacity: 0.5;
+}
+
+.context-menu .menu li button:hover .kbd {
+  opacity: 0.8;
+}
+
+/* Priority badge in context menu */
+.context-menu .badge {
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 24px;
+  padding: 0 4px;
 }

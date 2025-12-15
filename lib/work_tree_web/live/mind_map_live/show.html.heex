@@ -156,6 +156,15 @@
         <div :if={node.is_todo} class="mind-map-todo-indicator">
           <%= if node.todo_completed, do: "✓", else: "○" %>
         </div>
+        <div
+          :if={node.priority != nil}
+          class={[
+            "mind-map-priority-badge",
+            priority_color(node.priority)
+          ]}
+        >
+          P<%= node.priority %>
+        </div>
         <a
           :if={node.link}
           href={node.link}
@@ -325,6 +334,17 @@
     patch={~p"/node/#{@root.id}"}
   />
 </.modal>
+
+<%!-- Context menu --%>
+<.live_component
+  :if={@context_menu}
+  module={WorkTreeWeb.Components.ContextMenuComponent}
+  id="node-context-menu"
+  node={@context_menu.node}
+  x={@context_menu.x}
+  y={@context_menu.y}
+  is_root={@context_menu.node.id == @root.id}
+/>
 
 <%!-- Link edit modal --%>
 <.modal :if={@link_edit_node} id="link-modal" show on_cancel={JS.push("close_link_modal")}>
