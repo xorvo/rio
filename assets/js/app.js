@@ -65,37 +65,46 @@ const Hooks = {
   },
   NodeContextMenu: {
     mounted() {
+      // Handle click with modifier key detection
+      this.el.addEventListener("click", (e) => {
+        const nodeId = this.el.dataset.nodeId
+        if (nodeId) {
+          this.pushEvent("focus_node", {
+            id: nodeId,
+            metaKey: e.metaKey,
+            ctrlKey: e.ctrlKey
+          })
+        }
+      })
+
       this.el.addEventListener("contextmenu", (e) => {
         e.preventDefault()
         e.stopPropagation()
         const nodeId = this.el.dataset.nodeId
         if (nodeId) {
-          // Get viewport dimensions
-          const viewportWidth = window.innerWidth
-          const viewportHeight = window.innerHeight
+          // Pre-adjust position to keep menu within viewport
+          // Menu dimensions (approximate, includes expanded submenu)
+          const menuWidth = 240
+          const menuHeight = 520
+          const padding = 16
+          const bottomPadding = 60
 
-          // Estimated menu dimensions (w-56 = 224px, typical height ~400px)
-          const menuWidth = 224
-          const menuHeight = 400
-
-          // Calculate position, adjusting if menu would go off-screen
           let x = e.clientX
           let y = e.clientY
 
-          // Adjust horizontal position if menu would overflow right edge
-          if (x + menuWidth > viewportWidth - 16) {
-            x = viewportWidth - menuWidth - 16
+          // Adjust if menu would overflow right edge
+          if (x + menuWidth > window.innerWidth - padding) {
+            x = window.innerWidth - menuWidth - padding
           }
 
-          // Adjust vertical position if menu would overflow bottom edge
-          // Account for bottom hints bar (~50px)
-          if (y + menuHeight > viewportHeight - 60) {
-            y = viewportHeight - menuHeight - 60
+          // Adjust if menu would overflow bottom edge
+          if (y + menuHeight > window.innerHeight - bottomPadding) {
+            y = window.innerHeight - menuHeight - bottomPadding
           }
 
           // Ensure menu doesn't go off the top or left edges
-          x = Math.max(16, x)
-          y = Math.max(16, y)
+          x = Math.max(padding, x)
+          y = Math.max(padding, y)
 
           this.pushEvent("open_context_menu", { id: nodeId, x: x, y: y })
         }
@@ -225,6 +234,7 @@ const Hooks = {
           window.open(url, '_blank', 'noopener,noreferrer')
         }
       })
+
 
       // Expose hook methods for onclick handlers
       this.el.__liveViewHook = this
@@ -505,6 +515,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
+
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()

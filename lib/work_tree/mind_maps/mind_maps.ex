@@ -16,7 +16,7 @@ defmodule WorkTree.MindMaps do
   This is the entry point for the entire mind map tree.
   """
   def get_or_create_global_root do
-    case Repo.one(from n in Node, where: is_nil(n.parent_id), order_by: n.id, limit: 1) do
+    case Repo.one(from n in Node, where: is_nil(n.parent_id) and is_nil(n.deleted_at), order_by: n.id, limit: 1) do
       nil ->
         {:ok, root} = create_root_node(%{"title" => "Mind Map"})
         root
@@ -29,29 +29,45 @@ defmodule WorkTree.MindMaps do
   @doc """
   Gets a single node by ID.
   Raises `Ecto.NoResultsError` if not found.
+  Excludes soft-deleted nodes.
   """
-  def get_node!(id), do: Repo.get!(Node, id)
+  def get_node!(id) do
+    Node
+    |> where([n], n.id == ^id and is_nil(n.deleted_at))
+    |> Repo.one!()
+  end
 
   @doc """
   Gets a single node by ID, returns nil if not found.
+  Excludes soft-deleted nodes.
   """
-  def get_node(id), do: Repo.get(Node, id)
+  def get_node(id) do
+    Node
+    |> where([n], n.id == ^id and is_nil(n.deleted_at))
+    |> Repo.one()
+  end
+
+  @doc """
+  Gets a single node by ID, including soft-deleted nodes.
+  Used internally for restoration operations.
+  """
+  def get_node_including_deleted!(id), do: Repo.get!(Node, id)
 
   @doc """
   Gets a node with its children preloaded.
+  Excludes soft-deleted nodes.
   """
   def get_node_with_children!(id) do
-    Node
-    |> Repo.get!(id)
-    |> Repo.preload(children: from(c in Node, order_by: c.position))
+    get_node!(id)
+    |> Repo.preload(children: from(c in Node, where: is_nil(c.deleted_at), order_by: c.position))
   end
 
   @doc """
   Gets a node with attachments preloaded.
+  Excludes soft-deleted nodes.
   """
   def get_node_with_attachments!(id) do
-    Node
-    |> Repo.get!(id)
+    get_node!(id)
     |> Repo.preload(attachments: from(a in Attachment, order_by: a.position))
   end
 
@@ -161,12 +177,102 @@ defmodule WorkTree.MindMaps do
   end
 
   @doc """
-  Deletes a node and all its descendants.
+  Hard deletes a node and all its descendants.
+  Use soft_delete_node/1 for recoverable deletion.
   """
   def delete_node(%Node{} = node) do
     # Record deletion event before deleting
     Events.record_event(node, "deleted")
     Repo.delete(node)
+  end
+
+  @doc """
+  Soft deletes a node and all its descendants.
+  Returns {:ok, batch_id} where batch_id can be used for undo.
+  Returns {:error, :locked, locked_nodes} if any nodes in the subtree are locked.
+  """
+  def soft_delete_node(%Node{} = node) do
+    # Check if any nodes in subtree are locked
+    descendants = Tree.descendants_query(node) |> Repo.all()
+    all_nodes = [node | descendants]
+    locked_nodes = Enum.filter(all_nodes, & &1.locked)
+
+    if locked_nodes != [] do
+      {:error, :locked, locked_nodes}
+    else
+      batch_id = Ecto.UUID.generate()
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      Repo.transaction(fn ->
+        all_node_ids = Enum.map(all_nodes, & &1.id)
+        descendant_count = length(descendants)
+
+        # Soft delete all nodes in the subtree
+        from(n in Node, where: n.id in ^all_node_ids)
+        |> Repo.update_all(set: [deleted_at: now, deletion_batch_id: batch_id])
+
+        # Record deletion event for the root node
+        Events.record_event(node, "soft_deleted", %{batch_id: batch_id, descendant_count: descendant_count})
+
+        %{batch_id: batch_id, descendant_count: descendant_count}
+      end)
+    end
+  end
+
+  @doc """
+  Soft deletes multiple nodes (batch operation).
+  Each node and its descendants are deleted.
+  Returns {:ok, batch_id}.
+  Returns {:error, :locked, locked_nodes} if any nodes in the trees are locked.
+  """
+  def soft_delete_nodes(node_ids) when is_list(node_ids) do
+    # Collect all nodes including descendants and check for locks
+    all_nodes =
+      Enum.flat_map(node_ids, fn node_id ->
+        node = get_node!(node_id)
+        descendants = Tree.descendants_query(node) |> Repo.all()
+        [node | descendants]
+      end)
+      |> Enum.uniq_by(& &1.id)
+
+    locked_nodes = Enum.filter(all_nodes, & &1.locked)
+
+    if locked_nodes != [] do
+      {:error, :locked, locked_nodes}
+    else
+      batch_id = Ecto.UUID.generate()
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      Repo.transaction(fn ->
+        all_ids = Enum.map(all_nodes, & &1.id)
+
+        # Soft delete all
+        from(n in Node, where: n.id in ^all_ids)
+        |> Repo.update_all(set: [deleted_at: now, deletion_batch_id: batch_id])
+
+        %{batch_id: batch_id, total_count: length(all_ids)}
+      end)
+    end
+  end
+
+  @doc """
+  Restores all nodes in a deletion batch.
+  Returns {:ok, count} with number of restored nodes.
+  """
+  def restore_deletion_batch(batch_id) do
+    {count, _} =
+      from(n in Node, where: n.deletion_batch_id == ^batch_id)
+      |> Repo.update_all(set: [deleted_at: nil, deletion_batch_id: nil])
+
+    {:ok, count}
+  end
+
+  @doc """
+  Counts descendants of a node (excluding soft-deleted).
+  """
+  def count_descendants(%Node{} = node) do
+    Tree.descendants_query(node)
+    |> Repo.aggregate(:count)
   end
 
   @doc """
@@ -189,6 +295,25 @@ defmodule WorkTree.MindMaps do
   end
 
   def toggle_todo(%Node{} = node), do: {:ok, node}
+
+  @doc """
+  Toggles the locked state of a node.
+  """
+  def toggle_lock(%Node{locked: locked} = node) do
+    result =
+      node
+      |> Node.changeset(%{locked: !locked})
+      |> Repo.update()
+
+    case result do
+      {:ok, updated_node} ->
+        Events.record_event(updated_node, "lock_toggled")
+        {:ok, updated_node}
+
+      error ->
+        error
+    end
+  end
 
   @doc """
   Gets the full subtree rooted at a node.
@@ -221,17 +346,18 @@ defmodule WorkTree.MindMaps do
 
   @doc """
   Gets children of a node.
+  Excludes soft-deleted nodes.
   """
   def get_children(%Node{id: id}) do
     Node
-    |> where([n], n.parent_id == ^id)
+    |> where([n], n.parent_id == ^id and is_nil(n.deleted_at))
     |> order_by([n], n.position)
     |> Repo.all()
   end
 
   def get_children(node_id) when is_integer(node_id) do
     Node
-    |> where([n], n.parent_id == ^node_id)
+    |> where([n], n.parent_id == ^node_id and is_nil(n.deleted_at))
     |> order_by([n], n.position)
     |> Repo.all()
   end
@@ -246,9 +372,11 @@ defmodule WorkTree.MindMaps do
 
   @doc """
   Gets all nodes in the database (for global search).
+  Excludes soft-deleted nodes.
   """
   def get_all_nodes do
     Node
+    |> where([n], is_nil(n.deleted_at))
     |> order_by([n], [n.depth, n.path, n.position])
     |> Repo.all()
   end

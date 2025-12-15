@@ -23,15 +23,25 @@ defmodule WorkTree.MindMaps.Tree do
   @doc """
   Returns a query for all descendants of a node (subtree).
   Uses LIKE query on materialized path.
+  Excludes soft-deleted nodes by default.
   """
-  def descendants_query(%Node{path: path}) do
+  def descendants_query(%Node{path: path}, opts \\ []) do
     pattern = "#{path}.%"
-    from(n in Node, where: like(n.path, ^pattern))
+    include_deleted = Keyword.get(opts, :include_deleted, false)
+
+    query = from(n in Node, where: like(n.path, ^pattern))
+
+    if include_deleted do
+      query
+    else
+      from(n in query, where: is_nil(n.deleted_at))
+    end
   end
 
   @doc """
   Returns a query for all ancestors of a node.
   Parses path and returns nodes with matching IDs.
+  Excludes soft-deleted nodes.
   """
   def ancestors_query(%Node{path: path}) do
     ancestor_ids =
@@ -40,15 +50,16 @@ defmodule WorkTree.MindMaps.Tree do
       |> Enum.drop(-1)
       |> Enum.map(&String.to_integer/1)
 
-    from(n in Node, where: n.id in ^ancestor_ids, order_by: n.depth)
+    from(n in Node, where: n.id in ^ancestor_ids and is_nil(n.deleted_at), order_by: n.depth)
   end
 
   @doc """
   Returns a query for siblings of a node (nodes with same parent).
+  Excludes soft-deleted nodes.
   """
   def siblings_query(%Node{parent_id: parent_id, id: id}) do
     from(n in Node,
-      where: n.parent_id == ^parent_id and n.id != ^id,
+      where: n.parent_id == ^parent_id and n.id != ^id and is_nil(n.deleted_at),
       order_by: n.position
     )
   end
@@ -56,18 +67,19 @@ defmodule WorkTree.MindMaps.Tree do
   @doc """
   Returns the next position for a new child under a parent.
   Uses max(position) + 1 to avoid duplicate positions after deletions.
+  Only considers non-deleted nodes.
   """
   def next_child_position(nil) do
     # For root nodes, get max position + 1
     from(n in Node,
-      where: is_nil(n.parent_id),
+      where: is_nil(n.parent_id) and is_nil(n.deleted_at),
       select: coalesce(max(n.position) + 1, 0)
     )
   end
 
   def next_child_position(%Node{id: parent_id}) do
     from(n in Node,
-      where: n.parent_id == ^parent_id,
+      where: n.parent_id == ^parent_id and is_nil(n.deleted_at),
       select: coalesce(max(n.position) + 1, 0)
     )
   end

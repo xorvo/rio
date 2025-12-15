@@ -24,16 +24,25 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   def handle_key(socket, "J", _opts), do: {:noreply, Navigation.navigate_to(socket, :next_cousin)}
   def handle_key(socket, "K", _opts), do: {:noreply, Navigation.navigate_to(socket, :prev_cousin)}
 
-  # Delete with backspace
-  def handle_key(socket, "Backspace", opts) do
-    delete_fn = Keyword.fetch!(opts, :delete_fn)
-    focused_id = socket.assigns.focused_node_id
-    node = Enum.find(socket.assigns.nodes, &(&1.id == focused_id))
+  # Delete with backspace or x - supports batch delete
+  def handle_key(socket, key, opts) when key in ["Backspace", "x"] do
+    selected_ids = socket.assigns.selected_node_ids
 
-    if node do
-      delete_fn.(socket, node)
+    if MapSet.size(selected_ids) > 0 do
+      # Batch delete selected nodes
+      batch_delete_fn = Keyword.fetch!(opts, :batch_delete_fn)
+      batch_delete_fn.(socket, MapSet.to_list(selected_ids))
     else
-      {:noreply, socket}
+      # Single delete focused node
+      delete_fn = Keyword.fetch!(opts, :delete_fn)
+      focused_id = socket.assigns.focused_node_id
+      node = Enum.find(socket.assigns.nodes, &(&1.id == focused_id))
+
+      if node do
+        delete_fn.(socket, node)
+      else
+        {:noreply, socket}
+      end
     end
   end
 

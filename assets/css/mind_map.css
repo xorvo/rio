@@ -165,6 +165,19 @@
               0 4px 16px oklch(0% 0 0 / 12%);
 }
 
+.mind-map-node.multi-selected {
+  border-color: var(--color-secondary);
+  background: oklch(from var(--color-secondary) l c h / 12%);
+  box-shadow: 0 0 0 3px oklch(from var(--color-secondary) l c h / 30%),
+              0 4px 16px oklch(0% 0 0 / 12%);
+}
+
+.mind-map-node.multi-selected.focused {
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 4px oklch(from var(--color-secondary) l c h / 40%),
+              0 4px 16px oklch(0% 0 0 / 15%);
+}
+
 /* Node title */
 .mind-map-node-title {
   font-weight: 500;
@@ -244,6 +257,22 @@
 .mind-map-priority-badge.priority-p3 {
   background: var(--color-success);
   color: var(--color-success-content);
+}
+
+/* Locked badge */
+.mind-map-locked-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-warning);
+  color: var(--color-warning-content);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px oklch(0% 0 0 / 15%);
 }
 
 /* Link indicator */

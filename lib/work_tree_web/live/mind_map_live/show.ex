@@ -31,7 +31,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:selected_node, nil)
      |> assign(:ancestors, MindMaps.get_ancestors(root))
      |> assign(:page_title, root.title)
-     |> assign(:deleted_node, nil)
+     |> assign(:deletion_batch, nil)
      |> assign(:undo_timer, nil)
      |> assign(:editing_node_id, nil)
      |> assign(:link_edit_node, nil)
@@ -41,7 +41,9 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:search_query, "")
      |> assign(:search_results, [])
      |> assign(:global_search_results, [])
-     |> assign(:search_selected_index, 0)}
+     |> assign(:search_selected_index, 0)
+     |> assign(:selected_node_ids, MapSet.new())
+     |> assign(:pending_deletion, nil)}
   end
 
   defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)
@@ -79,13 +81,31 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   end
 
   @impl true
-  def handle_event("focus_node", %{"id" => id}, socket) do
+  def handle_event("focus_node", %{"id" => id} = params, socket) do
     id = String.to_integer(id)
+    meta_key = params["metaKey"] || params["ctrlKey"] || false
 
-    {:noreply,
-     socket
-     |> assign(:focused_node_id, id)
-     |> push_event("scroll-to-node", %{id: id})}
+    if meta_key do
+      # Cmd+click toggles selection
+      selected_ids = socket.assigns.selected_node_ids
+      new_selected = if MapSet.member?(selected_ids, id) do
+        MapSet.delete(selected_ids, id)
+      else
+        MapSet.put(selected_ids, id)
+      end
+
+      {:noreply,
+       socket
+       |> assign(:focused_node_id, id)
+       |> assign(:selected_node_ids, new_selected)}
+    else
+      # Regular click clears selection and focuses
+      {:noreply,
+       socket
+       |> assign(:focused_node_id, id)
+       |> assign(:selected_node_ids, MapSet.new())
+       |> push_event("scroll-to-node", %{id: id})}
+    end
   end
 
   def handle_event("open_node_detail", %{"id" => id}, socket) do
@@ -123,29 +143,26 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   end
 
   def handle_event("undo_delete", _, socket) do
-    case socket.assigns.deleted_node do
+    case socket.assigns.deletion_batch do
       nil ->
         {:noreply, socket}
 
-      deleted_data ->
+      %{batch_id: batch_id} = deletion_info ->
         # Cancel the timer
         if socket.assigns.undo_timer, do: Process.cancel_timer(socket.assigns.undo_timer)
 
-        # Restore the node
-        {:ok, restored} = MindMaps.create_child_node(deleted_data.parent_id, %{
-          "title" => deleted_data.title,
-          "body" => deleted_data.body || %{},
-          "is_todo" => deleted_data.is_todo,
-          "todo_completed" => deleted_data.todo_completed,
-          "edge_label" => deleted_data.edge_label
-        })
+        # Restore all nodes in the deletion batch
+        {:ok, _count} = MindMaps.restore_deletion_batch(batch_id)
+
+        # Focus on the original parent or root
+        focus_id = deletion_info[:parent_id] || socket.assigns.root.id
 
         {:noreply,
          socket
          |> reload_tree()
-         |> assign(:deleted_node, nil)
+         |> assign(:deletion_batch, nil)
          |> assign(:undo_timer, nil)
-         |> assign(:focused_node_id, restored.id)}
+         |> assign(:focused_node_id, focus_id)}
     end
   end
 
@@ -154,8 +171,29 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
     {:noreply,
      socket
-     |> assign(:deleted_node, nil)
+     |> assign(:deletion_batch, nil)
      |> assign(:undo_timer, nil)}
+  end
+
+  def handle_event("confirm_delete", _, socket) do
+    case socket.assigns.pending_deletion do
+      %{single_node: node} when not is_nil(node) ->
+        socket = assign(socket, :pending_deletion, nil)
+        do_single_delete(socket, node)
+
+      %{node_ids: node_ids} ->
+        socket = assign(socket, :pending_deletion, nil)
+        do_batch_delete(socket, node_ids, socket.assigns.root.id)
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_delete", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:pending_deletion, nil)}
   end
 
   def handle_event("focus_subtree", %{"id" => id}, socket) do
@@ -182,6 +220,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
       else
         KeyboardHandlers.handle_key(socket, key,
           delete_fn: &delete_node_with_undo/2,
+          batch_delete_fn: &batch_delete_nodes/2,
           reload_fn: &reload_tree/1
         )
       end
@@ -502,7 +541,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_info(:clear_undo, socket) do
     {:noreply,
      socket
-     |> assign(:deleted_node, nil)
+     |> assign(:deletion_batch, nil)
      |> assign(:undo_timer, nil)}
   end
 
@@ -595,9 +634,113 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> push_navigate(to: ~p"/node/#{node.id}")}
   end
 
+  def handle_info({:context_menu_action, :toggle_lock, node}, socket) do
+    {:ok, _} = MindMaps.toggle_lock(node)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> reload_tree()}
+  end
+
   def handle_info({:context_menu_action, :delete_node, node}, socket) do
     socket = assign(socket, :context_menu, nil)
     delete_node_with_undo(socket, node)
+  end
+
+  # Batch action handlers from context menu
+  def handle_info({:context_menu_action, :batch_make_todo, node_ids}, socket) do
+    Enum.each(node_ids, fn id ->
+      node = MindMaps.get_node!(id)
+      MindMaps.update_node(node, %{is_todo: true})
+    end)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:selected_node_ids, MapSet.new())
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :batch_remove_todo, node_ids}, socket) do
+    Enum.each(node_ids, fn id ->
+      node = MindMaps.get_node!(id)
+      MindMaps.update_node(node, %{is_todo: false, todo_completed: false})
+    end)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:selected_node_ids, MapSet.new())
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :batch_mark_complete, node_ids}, socket) do
+    Enum.each(node_ids, fn id ->
+      node = MindMaps.get_node!(id)
+      if node.is_todo do
+        MindMaps.update_node(node, %{todo_completed: true})
+      end
+    end)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:selected_node_ids, MapSet.new())
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :batch_mark_incomplete, node_ids}, socket) do
+    Enum.each(node_ids, fn id ->
+      node = MindMaps.get_node!(id)
+      if node.is_todo do
+        MindMaps.update_node(node, %{todo_completed: false})
+      end
+    end)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:selected_node_ids, MapSet.new())
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :batch_set_priority, node_ids, priority}, socket) do
+    Enum.each(node_ids, fn id ->
+      node = MindMaps.get_node!(id)
+      MindMaps.update_node(node, %{priority: priority})
+    end)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:selected_node_ids, MapSet.new())
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :batch_clear_priority, node_ids}, socket) do
+    Enum.each(node_ids, fn id ->
+      node = MindMaps.get_node!(id)
+      MindMaps.update_node(node, %{priority: nil})
+    end)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:selected_node_ids, MapSet.new())
+     |> reload_tree()}
+  end
+
+  def handle_info({:context_menu_action, :batch_delete, node_ids}, socket) do
+    socket = assign(socket, :context_menu, nil)
+    batch_delete_nodes(socket, node_ids)
+  end
+
+  def handle_info({:context_menu_action, :clear_selection}, socket) do
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> assign(:selected_node_ids, MapSet.new())}
   end
 
   defp delete_node_with_undo(socket, node) do
@@ -607,34 +750,130 @@ defmodule WorkTreeWeb.MindMapLive.Show do
        |> put_flash(:error, "Cannot delete the root node from this view")
        |> assign(:selected_node, nil)}
     else
-      # Cancel any existing undo timer
-      if socket.assigns.undo_timer, do: Process.cancel_timer(socket.assigns.undo_timer)
+      # Check total count for confirmation
+      descendant_count = MindMaps.count_descendants(node)
+      total_count = 1 + descendant_count
 
-      # Store node data for potential undo
-      deleted_data = %{
-        title: node.title,
-        body: node.body,
-        is_todo: node.is_todo,
-        todo_completed: node.todo_completed,
-        edge_label: node.edge_label,
-        parent_id: node.parent_id
-      }
+      # If more than 3 nodes, show confirmation dialog
+      if total_count > 3 and socket.assigns.pending_deletion == nil do
+        {:noreply,
+         socket
+         |> assign(:pending_deletion, %{node_ids: [node.id], total_count: total_count, single_node: node})}
+      else
+        do_single_delete(socket, node)
+      end
+    end
+  end
 
-      # Reset focused node to parent or root before deleting
-      new_focus = node.parent_id || socket.assigns.root.id
-      {:ok, _} = MindMaps.delete_node(node)
+  defp do_single_delete(socket, node) do
+    # Cancel any existing undo timer
+    if socket.assigns.undo_timer, do: Process.cancel_timer(socket.assigns.undo_timer)
 
-      # Start timer to clear undo option
-      timer_ref = Process.send_after(self(), :clear_undo, @undo_timeout)
+    # Perform soft delete
+    case MindMaps.soft_delete_node(node) do
+      {:error, :locked, locked_nodes} ->
+        locked_titles = Enum.map_join(locked_nodes, ", ", & &1.title)
+        {:noreply,
+         socket
+         |> put_flash(:error, "Cannot delete: locked nodes found (#{locked_titles})")
+         |> assign(:selected_node, nil)
+         |> assign(:pending_deletion, nil)}
 
+      {:ok, %{batch_id: batch_id, descendant_count: descendant_count}} ->
+        # Build deletion info for undo
+        deletion_info = %{
+          batch_id: batch_id,
+          title: node.title,
+          descendant_count: descendant_count,
+          parent_id: node.parent_id
+        }
+
+        # Reset focused node to parent or root
+        new_focus = node.parent_id || socket.assigns.root.id
+
+        # Start timer to clear undo option
+        timer_ref = Process.send_after(self(), :clear_undo, @undo_timeout)
+
+        {:noreply,
+         socket
+         |> reload_tree()
+         |> assign(:selected_node, nil)
+         |> assign(:focused_node_id, new_focus)
+         |> assign(:deletion_batch, deletion_info)
+         |> assign(:undo_timer, timer_ref)
+         |> assign(:pending_deletion, nil)}
+    end
+  end
+
+  defp batch_delete_nodes(socket, node_ids) do
+    root_id = socket.assigns.root.id
+
+    # Filter out root node from deletion
+    deletable_ids = Enum.reject(node_ids, &(&1 == root_id))
+
+    if deletable_ids == [] do
       {:noreply,
        socket
-       |> reload_tree()
-       |> assign(:selected_node, nil)
-       |> assign(:focused_node_id, new_focus)
-       |> assign(:deleted_node, deleted_data)
-       |> assign(:undo_timer, timer_ref)}
+       |> put_flash(:error, "Cannot delete the root node")}
+    else
+      # Count total nodes including descendants
+      total_count = count_nodes_for_deletion(deletable_ids)
+
+      # If more than 3 nodes, show confirmation dialog
+      if total_count > 3 and not socket.assigns[:pending_deletion_confirmed] do
+        {:noreply,
+         socket
+         |> assign(:pending_deletion, %{node_ids: deletable_ids, total_count: total_count})}
+      else
+        do_batch_delete(socket, deletable_ids, root_id)
+      end
     end
+  end
+
+  defp do_batch_delete(socket, deletable_ids, root_id) do
+    # Cancel any existing undo timer
+    if socket.assigns.undo_timer, do: Process.cancel_timer(socket.assigns.undo_timer)
+
+    # Perform soft delete of all selected nodes
+    case MindMaps.soft_delete_nodes(deletable_ids) do
+      {:error, :locked, locked_nodes} ->
+        locked_titles = Enum.map_join(locked_nodes, ", ", & &1.title)
+        {:noreply,
+         socket
+         |> put_flash(:error, "Cannot delete: locked nodes found (#{locked_titles})")
+         |> assign(:selected_node_ids, MapSet.new())
+         |> assign(:pending_deletion, nil)}
+
+      {:ok, %{batch_id: batch_id, total_count: total_count}} ->
+        # Build deletion info for undo
+        deletion_info = %{
+          batch_id: batch_id,
+          title: "#{length(deletable_ids)} nodes",
+          descendant_count: total_count - length(deletable_ids),
+          parent_id: nil,
+          batch: true
+        }
+
+        timer_ref = Process.send_after(self(), :clear_undo, @undo_timeout)
+
+        {:noreply,
+         socket
+         |> reload_tree()
+         |> assign(:selected_node, nil)
+         |> assign(:selected_node_ids, MapSet.new())
+         |> assign(:focused_node_id, root_id)
+         |> assign(:deletion_batch, deletion_info)
+         |> assign(:undo_timer, timer_ref)
+         |> assign(:pending_deletion, nil)}
+    end
+  end
+
+  defp count_nodes_for_deletion(node_ids) do
+    Enum.reduce(node_ids, 0, fn id, acc ->
+      node = MindMaps.get_node!(id)
+      descendant_count = MindMaps.count_descendants(node)
+      acc + 1 + descendant_count
+    end)
   end
 
   defp reload_tree(socket) do

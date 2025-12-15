@@ -16,6 +16,11 @@ defmodule WorkTree.MindMaps.Node do
     field :priority, :integer
     # External link URL attached to the node
     field :link, :string
+    # Locked nodes cannot be deleted
+    field :locked, :boolean, default: false
+    # Soft delete fields
+    field :deleted_at, :utc_datetime
+    field :deletion_batch_id, Ecto.UUID
 
     belongs_to :parent, __MODULE__
     has_many :children, __MODULE__, foreign_key: :parent_id
@@ -27,7 +32,7 @@ defmodule WorkTree.MindMaps.Node do
   @doc false
   def changeset(node, attrs) do
     node
-    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link])
+    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :locked])
     |> validate_required([:title, :path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)
@@ -39,7 +44,7 @@ defmodule WorkTree.MindMaps.Node do
   """
   def inline_changeset(node, attrs) do
     node
-    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link])
+    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :locked])
     |> validate_required([:path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)
