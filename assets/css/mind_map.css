@@ -283,7 +283,7 @@
   gap: 4px;
   background: oklch(from var(--color-base-100) l c h / 95%);
   backdrop-filter: blur(8px);
-  padding: 2px;
+  padding: 4px;
   border-radius: var(--radius-box);
   border: 1px solid oklch(from var(--color-base-300) l c h);
   box-shadow: 0 2px 8px oklch(0% 0 0 / 8%);

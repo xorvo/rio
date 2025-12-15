@@ -4,7 +4,8 @@
   phx-window-keydown="keydown"
   phx-hook="MindMapCanvas"
   data-root-id={@root.id}
-><div id="disable-tab-helper" phx-hook="DisableTab" style="display:none;"></div>
+>
+  <div id="disable-tab-helper" phx-hook="DisableTab" style="display:none;"></div>
   <%!-- Breadcrumb navigation --%>
   <div :if={@ancestors != []} class="mind-map-breadcrumb">
     <.link navigate={~p"/"} class="text-base-content/60 hover:text-primary">
@@ -13,11 +14,11 @@
     <span :for={ancestor <- @ancestors} class="flex items-center">
       <span class="mx-2 text-base-content/40">/</span>
       <.link navigate={~p"/node/#{ancestor.id}"} class="text-base-content/60 hover:text-primary">
-        <%= ancestor.title %>
+        {ancestor.title}
       </.link>
     </span>
     <span class="mx-2 text-base-content/40">/</span>
-    <span class="font-medium"><%= @root.title %></span>
+    <span class="font-medium">{@root.title}</span>
   </div>
 
   <%!-- Toolbar --%>
@@ -28,48 +29,154 @@
     <div class="flex-1"></div>
     <div class="dropdown dropdown-end">
       <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+          />
         </svg>
         Theme
       </div>
-      <ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-50 w-44 p-2 shadow-lg max-h-80 overflow-y-auto">
+      <ul
+        tabindex="0"
+        class="dropdown-content menu bg-base-200 rounded-box z-50 w-44 p-2 shadow-lg max-h-80 overflow-y-auto"
+      >
         <li class="menu-title text-xs">System</li>
-        <li><button data-phx-theme="system" phx-click={JS.dispatch("phx:set-theme")}>Auto</button></li>
+        <li>
+          <button data-phx-theme="system" phx-click={JS.dispatch("phx:set-theme")}>Auto</button>
+        </li>
         <li class="menu-title text-xs mt-2">Light Themes</li>
-        <li><button data-phx-theme="light" phx-click={JS.dispatch("phx:set-theme")}>Light</button></li>
-        <li><button data-phx-theme="cupcake" phx-click={JS.dispatch("phx:set-theme")}>Cupcake</button></li>
-        <li><button data-phx-theme="bumblebee" phx-click={JS.dispatch("phx:set-theme")}>Bumblebee</button></li>
-        <li><button data-phx-theme="emerald" phx-click={JS.dispatch("phx:set-theme")}>Emerald</button></li>
-        <li><button data-phx-theme="corporate" phx-click={JS.dispatch("phx:set-theme")}>Corporate</button></li>
-        <li><button data-phx-theme="retro" phx-click={JS.dispatch("phx:set-theme")}>Retro</button></li>
-        <li><button data-phx-theme="garden" phx-click={JS.dispatch("phx:set-theme")}>Garden</button></li>
-        <li><button data-phx-theme="lofi" phx-click={JS.dispatch("phx:set-theme")}>Lofi</button></li>
-        <li><button data-phx-theme="pastel" phx-click={JS.dispatch("phx:set-theme")}>Pastel</button></li>
-        <li><button data-phx-theme="fantasy" phx-click={JS.dispatch("phx:set-theme")}>Fantasy</button></li>
-        <li><button data-phx-theme="wireframe" phx-click={JS.dispatch("phx:set-theme")}>Wireframe</button></li>
-        <li><button data-phx-theme="cmyk" phx-click={JS.dispatch("phx:set-theme")}>CMYK</button></li>
-        <li><button data-phx-theme="autumn" phx-click={JS.dispatch("phx:set-theme")}>Autumn</button></li>
-        <li><button data-phx-theme="acid" phx-click={JS.dispatch("phx:set-theme")}>Acid</button></li>
-        <li><button data-phx-theme="lemonade" phx-click={JS.dispatch("phx:set-theme")}>Lemonade</button></li>
-        <li><button data-phx-theme="winter" phx-click={JS.dispatch("phx:set-theme")}>Winter</button></li>
-        <li><button data-phx-theme="nord" phx-click={JS.dispatch("phx:set-theme")}>Nord</button></li>
+        <li>
+          <button data-phx-theme="light" phx-click={JS.dispatch("phx:set-theme")}>Light</button>
+        </li>
+        <li>
+          <button data-phx-theme="cupcake" phx-click={JS.dispatch("phx:set-theme")}>
+            Cupcake
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="bumblebee" phx-click={JS.dispatch("phx:set-theme")}>
+            Bumblebee
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="emerald" phx-click={JS.dispatch("phx:set-theme")}>
+            Emerald
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="corporate" phx-click={JS.dispatch("phx:set-theme")}>
+            Corporate
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="retro" phx-click={JS.dispatch("phx:set-theme")}>Retro</button>
+        </li>
+        <li>
+          <button data-phx-theme="garden" phx-click={JS.dispatch("phx:set-theme")}>Garden</button>
+        </li>
+        <li>
+          <button data-phx-theme="lofi" phx-click={JS.dispatch("phx:set-theme")}>Lofi</button>
+        </li>
+        <li>
+          <button data-phx-theme="pastel" phx-click={JS.dispatch("phx:set-theme")}>Pastel</button>
+        </li>
+        <li>
+          <button data-phx-theme="fantasy" phx-click={JS.dispatch("phx:set-theme")}>
+            Fantasy
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="wireframe" phx-click={JS.dispatch("phx:set-theme")}>
+            Wireframe
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="cmyk" phx-click={JS.dispatch("phx:set-theme")}>CMYK</button>
+        </li>
+        <li>
+          <button data-phx-theme="autumn" phx-click={JS.dispatch("phx:set-theme")}>Autumn</button>
+        </li>
+        <li>
+          <button data-phx-theme="acid" phx-click={JS.dispatch("phx:set-theme")}>Acid</button>
+        </li>
+        <li>
+          <button data-phx-theme="lemonade" phx-click={JS.dispatch("phx:set-theme")}>
+            Lemonade
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="winter" phx-click={JS.dispatch("phx:set-theme")}>Winter</button>
+        </li>
+        <li>
+          <button data-phx-theme="nord" phx-click={JS.dispatch("phx:set-theme")}>Nord</button>
+        </li>
         <li class="menu-title text-xs mt-2">Dark Themes</li>
-        <li><button data-phx-theme="dark" phx-click={JS.dispatch("phx:set-theme")}>Dark</button></li>
-        <li><button data-phx-theme="synthwave" phx-click={JS.dispatch("phx:set-theme")}>Synthwave</button></li>
-        <li><button data-phx-theme="cyberpunk" phx-click={JS.dispatch("phx:set-theme")}>Cyberpunk</button></li>
-        <li><button data-phx-theme="valentine" phx-click={JS.dispatch("phx:set-theme")}>Valentine</button></li>
-        <li><button data-phx-theme="halloween" phx-click={JS.dispatch("phx:set-theme")}>Halloween</button></li>
-        <li><button data-phx-theme="forest" phx-click={JS.dispatch("phx:set-theme")}>Forest</button></li>
-        <li><button data-phx-theme="aqua" phx-click={JS.dispatch("phx:set-theme")}>Aqua</button></li>
-        <li><button data-phx-theme="black" phx-click={JS.dispatch("phx:set-theme")}>Black</button></li>
-        <li><button data-phx-theme="luxury" phx-click={JS.dispatch("phx:set-theme")}>Luxury</button></li>
-        <li><button data-phx-theme="dracula" phx-click={JS.dispatch("phx:set-theme")}>Dracula</button></li>
-        <li><button data-phx-theme="business" phx-click={JS.dispatch("phx:set-theme")}>Business</button></li>
-        <li><button data-phx-theme="night" phx-click={JS.dispatch("phx:set-theme")}>Night</button></li>
-        <li><button data-phx-theme="coffee" phx-click={JS.dispatch("phx:set-theme")}>Coffee</button></li>
-        <li><button data-phx-theme="dim" phx-click={JS.dispatch("phx:set-theme")}>Dim</button></li>
-        <li><button data-phx-theme="sunset" phx-click={JS.dispatch("phx:set-theme")}>Sunset</button></li>
+        <li>
+          <button data-phx-theme="dark" phx-click={JS.dispatch("phx:set-theme")}>Dark</button>
+        </li>
+        <li>
+          <button data-phx-theme="synthwave" phx-click={JS.dispatch("phx:set-theme")}>
+            Synthwave
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="cyberpunk" phx-click={JS.dispatch("phx:set-theme")}>
+            Cyberpunk
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="valentine" phx-click={JS.dispatch("phx:set-theme")}>
+            Valentine
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="halloween" phx-click={JS.dispatch("phx:set-theme")}>
+            Halloween
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="forest" phx-click={JS.dispatch("phx:set-theme")}>Forest</button>
+        </li>
+        <li>
+          <button data-phx-theme="aqua" phx-click={JS.dispatch("phx:set-theme")}>Aqua</button>
+        </li>
+        <li>
+          <button data-phx-theme="black" phx-click={JS.dispatch("phx:set-theme")}>Black</button>
+        </li>
+        <li>
+          <button data-phx-theme="luxury" phx-click={JS.dispatch("phx:set-theme")}>Luxury</button>
+        </li>
+        <li>
+          <button data-phx-theme="dracula" phx-click={JS.dispatch("phx:set-theme")}>
+            Dracula
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="business" phx-click={JS.dispatch("phx:set-theme")}>
+            Business
+          </button>
+        </li>
+        <li>
+          <button data-phx-theme="night" phx-click={JS.dispatch("phx:set-theme")}>Night</button>
+        </li>
+        <li>
+          <button data-phx-theme="coffee" phx-click={JS.dispatch("phx:set-theme")}>Coffee</button>
+        </li>
+        <li>
+          <button data-phx-theme="dim" phx-click={JS.dispatch("phx:set-theme")}>Dim</button>
+        </li>
+        <li>
+          <button data-phx-theme="sunset" phx-click={JS.dispatch("phx:set-theme")}>Sunset</button>
+        </li>
       </ul>
     </div>
   </div>
@@ -109,7 +216,7 @@
               y={(edge.source_y + edge.target_y) / 2 - 8}
               class="mind-map-edge-label"
             >
-              <%= edge.label %>
+              {edge.label}
             </text>
           <% end %>
         </g>
@@ -150,11 +257,11 @@
           </form>
         <% else %>
           <div class="mind-map-node-title">
-            <%= node.title %>
+            {node.title}
           </div>
         <% end %>
         <div :if={node.is_todo} class="mind-map-todo-indicator">
-          <%= if node.todo_completed, do: "✓", else: "○" %>
+          {if node.todo_completed, do: "✓", else: "○"}
         </div>
         <div
           :if={node.priority != nil}
@@ -163,7 +270,7 @@
             priority_color(node.priority)
           ]}
         >
-          P<%= node.priority %>
+          P{node.priority}
         </div>
         <a
           :if={node.link}
@@ -174,8 +281,19 @@
           title={node.link}
           onclick="event.stopPropagation()"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-3 w-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
           </svg>
         </a>
       </div>
@@ -190,18 +308,30 @@
       onclick="document.getElementById('mind-map-container').__liveViewHook?.zoomIn()"
       title="Zoom in (+)"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
     </button>
-    <span data-zoom-level class="text-xs font-mono text-center min-w-[3rem]">100%</span>
+    <span data-zoom-level class="text-xs font-mono text-center min-w-[2rem]">100%</span>
     <button
       type="button"
       class="btn btn-ghost btn-xs btn-square"
       onclick="document.getElementById('mind-map-container').__liveViewHook?.zoomOut()"
       title="Zoom out (-)"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
       </svg>
     </button>
@@ -211,40 +341,55 @@
       onclick="document.getElementById('mind-map-container').__liveViewHook?.fitToView()"
       title="Fit to view"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+        />
       </svg>
     </button>
   </div>
 
   <%!-- Keyboard shortcuts hint --%>
   <div class="mind-map-hints">
-    <span class="kbd kbd-xs">h</span><span class="kbd kbd-xs">j</span><span class="kbd kbd-xs">k</span><span class="kbd kbd-xs">l</span> navigate
-    <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">Enter</span> details
-    <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">o</span> add
-    <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">t</span> todo
-    <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">f</span> focus
-    <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">a</span> link
-    <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">g</span> open
-    <span class="mx-2">·</span>
-    <span class="kbd kbd-xs">⌫</span> delete
+    <span class="kbd kbd-xs">h</span><span class="kbd kbd-xs">j</span><span class="kbd kbd-xs">k</span><span class="kbd kbd-xs">l</span>
+    navigate <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">Enter</span>
+    details <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">o</span>
+    add <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">t</span>
+    todo <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">f</span>
+    focus <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">a</span>
+    link <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">g</span>
+    open <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">⌫</span>
+    delete
   </div>
 
   <%!-- Undo toast notification --%>
   <div
     :if={@deleted_node}
     class="mind-map-undo-toast"
-    phx-mounted={JS.transition({"ease-out duration-300", "opacity-0 translate-y-4", "opacity-100 translate-y-0"})}
+    phx-mounted={
+      JS.transition(
+        {"ease-out duration-300", "opacity-0 translate-y-4", "opacity-100 translate-y-0"}
+      )
+    }
   >
     <span class="flex items-center gap-2">
-      <span class="text-error">✕</span>
-      Deleted "<%= @deleted_node.title %>"
+      <span class="text-error">✕</span> Deleted "{@deleted_node.title}"
     </span>
     <div class="flex gap-2">
       <button phx-click="undo_delete" class="btn btn-sm btn-primary">
@@ -263,27 +408,35 @@
     <%!-- Header --%>
     <div>
       <h3 class="text-base font-semibold text-base-content flex items-center gap-2">
-        <span :if={@selected_node.is_todo} class={"text-base #{if @selected_node.todo_completed, do: "text-success", else: "text-base-content/40"}"}>
-          <%= if @selected_node.todo_completed, do: "☑", else: "☐" %>
+        <span
+          :if={@selected_node.is_todo}
+          class={"text-base #{if @selected_node.todo_completed, do: "text-success", else: "text-base-content/40"}"}
+        >
+          {if @selected_node.todo_completed, do: "☑", else: "☐"}
         </span>
-        <%= @selected_node.title %>
+        {@selected_node.title}
       </h3>
       <p :if={@selected_node.link} class="mt-1.5 text-xs text-info truncate">
-        <a href={@selected_node.link} target="_blank" rel="noopener noreferrer" class="hover:underline">
-          <%= @selected_node.link %>
+        <a
+          href={@selected_node.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:underline"
+        >
+          {@selected_node.link}
         </a>
       </p>
     </div>
 
     <%!-- Content --%>
     <div :if={@selected_node.body["content"]} class="prose prose-sm max-w-none">
-      <p class="text-base-content/80"><%= @selected_node.body["content"] %></p>
+      <p class="text-base-content/80">{@selected_node.body["content"]}</p>
     </div>
 
     <%!-- Metadata --%>
     <div :if={@selected_node.edge_label} class="text-sm">
       <span class="text-base-content/50">Edge label:</span>
-      <span class="ml-1 text-base-content/80"><%= @selected_node.edge_label %></span>
+      <span class="ml-1 text-base-content/80">{@selected_node.edge_label}</span>
     </div>
 
     <%!-- Actions --%>
@@ -300,7 +453,7 @@
         phx-value-id={@selected_node.id}
         class="btn btn-sm btn-outline"
       >
-        <%= if @selected_node.todo_completed, do: "Mark incomplete", else: "Mark complete" %>
+        {if @selected_node.todo_completed, do: "Mark incomplete", else: "Mark complete"}
       </button>
       <button
         phx-click="focus_subtree"
@@ -323,7 +476,12 @@
 </.modal>
 
 <%!-- Edit node modal --%>
-<.modal :if={@modal_action == :edit} id="node-form-modal" show on_cancel={JS.patch(~p"/node/#{@root.id}")}>
+<.modal
+  :if={@modal_action == :edit}
+  id="node-form-modal"
+  show
+  on_cancel={JS.patch(~p"/node/#{@root.id}")}
+>
   <.live_component
     module={WorkTreeWeb.MindMapLive.NodeFormComponent}
     id={@form_node.id || :new}
@@ -351,10 +509,10 @@
   <div class="space-y-5">
     <div>
       <h3 class="text-base font-semibold text-base-content">
-        <%= if @link_edit_node.link, do: "Edit Link", else: "Add Link" %>
+        {if @link_edit_node.link, do: "Edit Link", else: "Add Link"}
       </h3>
       <p class="mt-1 text-xs text-base-content/60">
-        Attach a URL to "<%= @link_edit_node.title %>"
+        Attach a URL to "{@link_edit_node.title}"
       </p>
     </div>
 
