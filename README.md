@@ -1,18 +1,24 @@
-# MindMapperPoc
+# Work Tree
 
-To start your Phoenix server:
+A real-time mind mapping application built with Phoenix LiveView.
 
-* Run `mix setup` to install and setup dependencies
-* Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+## Features
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+- **Interactive canvas** - Pan, zoom, and navigate your mind maps
+- **Keyboard navigation** - Arrow keys to move between nodes
+- **Inline editing** - Edit node titles directly on the canvas
+- **Todo support** - Mark nodes as tasks with completion tracking
+- **Priority levels** - P0-P3 priorities with visual badges
+- **Link attachments** - Attach URLs to nodes
+- **Context menu** - Right-click for quick actions
+- **Undo delete** - Restore accidentally deleted nodes
+- **Subtree focus** - Drill down into any branch
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## Getting Started
 
-## Learn more
+```bash
+mix setup
+mix phx.server
+```
 
-* Official website: https://www.phoenixframework.org/
-* Guides: https://hexdocs.pm/phoenix/overview.html
-* Docs: https://hexdocs.pm/phoenix
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+Visit [localhost:4000](http://localhost:4000)

@@ -126,10 +126,15 @@ defmodule WorkTree.MindMaps.Tree do
 
     sorted_children =
       children
-      # Sort by position first, then by id for consistent ordering when positions are equal
-      |> Enum.sort_by(&{&1.position, &1.id})
+      # Sort by priority first (nil treated as lowest/infinity), then by position, then by id
+      |> Enum.sort_by(&{priority_sort_key(&1.priority), &1.position, &1.id})
       |> Enum.map(&build_subtree(&1, nodes_by_parent))
 
     Map.put(node, :children, sorted_children)
   end
+
+  # Priority sort key: nil becomes infinity (999), otherwise use the actual priority value
+  # Lower priority number = higher priority (P0 > P1 > P2 > P3 > nil)
+  defp priority_sort_key(nil), do: 999
+  defp priority_sort_key(priority), do: priority
 end
