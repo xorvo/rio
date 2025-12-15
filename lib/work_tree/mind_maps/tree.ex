@@ -126,11 +126,42 @@ defmodule WorkTree.MindMaps.Tree do
 
     sorted_children =
       children
-      # Sort by priority first (nil treated as lowest/infinity), then by position, then by id
-      |> Enum.sort_by(&{priority_sort_key(&1.priority), &1.position, &1.id})
+      |> sort_siblings()
       |> Enum.map(&build_subtree(&1, nodes_by_parent))
 
     Map.put(node, :children, sorted_children)
+  end
+
+  @doc """
+  Returns the sort key for a node.
+  Used for consistent ordering across the application.
+  Priority first (nil treated as lowest), then position, then id.
+  """
+  def sort_key(node) do
+    {priority_sort_key(node.priority), node.position, node.id}
+  end
+
+  @doc """
+  Sorts a list of nodes by priority, position, then id.
+  This is the canonical sorting order used throughout the app.
+  """
+  def sort_siblings(nodes) do
+    Enum.sort_by(nodes, &sort_key/1)
+  end
+
+  @doc """
+  Compares two sibling nodes.
+  Returns :lt, :eq, or :gt based on the canonical sort order.
+  """
+  def compare_siblings(node_a, node_b) do
+    key_a = sort_key(node_a)
+    key_b = sort_key(node_b)
+
+    cond do
+      key_a < key_b -> :lt
+      key_a > key_b -> :gt
+      true -> :eq
+    end
   end
 
   # Priority sort key: nil becomes infinity (999), otherwise use the actual priority value

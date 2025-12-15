@@ -20,6 +20,10 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   def handle_key(socket, "j", _opts), do: {:noreply, Navigation.navigate_to(socket, :next_sibling)}
   def handle_key(socket, "k", _opts), do: {:noreply, Navigation.navigate_to(socket, :prev_sibling)}
 
+  # Capital J/K to jump across subtrees (cousins)
+  def handle_key(socket, "J", _opts), do: {:noreply, Navigation.navigate_to(socket, :next_cousin)}
+  def handle_key(socket, "K", _opts), do: {:noreply, Navigation.navigate_to(socket, :prev_cousin)}
+
   # Delete with backspace
   def handle_key(socket, "Backspace", opts) do
     delete_fn = Keyword.fetch!(opts, :delete_fn)
@@ -55,6 +59,26 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
      |> reload_fn.()
      |> assign(:focused_node_id, new_node.id)
      |> assign(:editing_node_id, new_node.id)}
+  end
+
+  # 'O' (Shift+o) to create new sibling node (no effect on root)
+  def handle_key(socket, "O", opts) do
+    focused_id = socket.assigns.focused_node_id
+    node = Enum.find(socket.assigns.nodes, &(&1.id == focused_id))
+
+    # Only create sibling if not the root node of current view
+    if node && node.id != socket.assigns.root.id do
+      reload_fn = Keyword.fetch!(opts, :reload_fn)
+      {:ok, new_node} = MindMaps.create_sibling_node(node, %{"title" => "New node"})
+
+      {:noreply,
+       socket
+       |> reload_fn.()
+       |> assign(:focused_node_id, new_node.id)
+       |> assign(:editing_node_id, new_node.id)}
+    else
+      {:noreply, socket}
+    end
   end
 
   # 't' to toggle todo state (converts to todo if not already)
@@ -97,6 +121,11 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   def handle_key(socket, "g", _opts) do
     focused_id = socket.assigns.focused_node_id
     {:noreply, Phoenix.LiveView.push_event(socket, "open-focused-node-link", %{node_id: focused_id})}
+  end
+
+  # Space to toggle hints expansion
+  def handle_key(socket, " ", _opts) do
+    {:noreply, assign(socket, :hints_expanded, !socket.assigns.hints_expanded)}
   end
 
   # Ignore tab

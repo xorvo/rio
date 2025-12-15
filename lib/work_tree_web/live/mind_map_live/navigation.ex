@@ -6,6 +6,7 @@ defmodule WorkTreeWeb.MindMapLive.Navigation do
 
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [push_event: 3]
+  alias WorkTree.MindMaps.Tree
 
   @doc """
   Navigate to a relative position based on direction.
@@ -26,40 +27,126 @@ defmodule WorkTreeWeb.MindMapLive.Navigation do
           end
 
         :child ->
-          children = Enum.filter(nodes, &(&1.parent_id == focused_id))
-          first_child = Enum.min_by(children, & &1.position, fn -> nil end)
+          children =
+            nodes
+            |> Enum.filter(&(&1.parent_id == focused_id))
+            |> Tree.sort_siblings()
+
+          first_child = List.first(children)
           if first_child, do: first_child.id, else: focused_id
 
         :next_sibling ->
-          siblings =
-            Enum.filter(nodes, &(&1.parent_id == current.parent_id && &1.id != focused_id))
-            |> Enum.sort_by(&{&1.position, &1.id})
+          all_siblings =
+            nodes
+            |> Enum.filter(&(&1.parent_id == current.parent_id))
+            |> Tree.sort_siblings()
 
-          next =
-            Enum.find(siblings, fn sib ->
-              sib.position > current.position ||
-                (sib.position == current.position && sib.id > current.id)
-            end)
-
-          if next, do: next.id, else: focused_id
+          current_index = Enum.find_index(all_siblings, &(&1.id == focused_id))
+          next_index = rem(current_index + 1, length(all_siblings))
+          Enum.at(all_siblings, next_index).id
 
         :prev_sibling ->
-          siblings =
-            Enum.filter(nodes, &(&1.parent_id == current.parent_id && &1.id != focused_id))
-            |> Enum.sort_by(&{&1.position, &1.id}, :desc)
+          all_siblings =
+            nodes
+            |> Enum.filter(&(&1.parent_id == current.parent_id))
+            |> Tree.sort_siblings()
 
-          prev =
-            Enum.find(siblings, fn sib ->
-              sib.position < current.position ||
-                (sib.position == current.position && sib.id < current.id)
-            end)
+          current_index = Enum.find_index(all_siblings, &(&1.id == focused_id))
+          prev_index = rem(current_index - 1 + length(all_siblings), length(all_siblings))
+          Enum.at(all_siblings, prev_index).id
 
-          if prev, do: prev.id, else: focused_id
+        :next_cousin ->
+          find_next_cousin(nodes, current, socket.assigns.root.id)
+
+        :prev_cousin ->
+          find_prev_cousin(nodes, current, socket.assigns.root.id)
       end
 
     socket
     |> assign(:focused_node_id, new_id)
     |> push_event("scroll-to-node", %{id: new_id})
+  end
+
+  # Find the next node across subtrees at the same depth level
+  defp find_next_cousin(nodes, current, root_id) do
+    parent_id = current.parent_id
+
+    # If at root level, just wrap siblings
+    if parent_id == root_id or parent_id == nil do
+      all_siblings =
+        nodes
+        |> Enum.filter(&(&1.parent_id == parent_id))
+        |> Tree.sort_siblings()
+
+      current_index = Enum.find_index(all_siblings, &(&1.id == current.id))
+      next_index = rem(current_index + 1, length(all_siblings))
+      Enum.at(all_siblings, next_index).id
+    else
+      # Get parent and its siblings (aunts/uncles)
+      parent = Enum.find(nodes, &(&1.id == parent_id))
+      parent_siblings =
+        nodes
+        |> Enum.filter(&(&1.parent_id == parent.parent_id))
+        |> Tree.sort_siblings()
+
+      # Get all children of all parent siblings (cousins + siblings), sorted by parent order
+      all_cousins =
+        parent_siblings
+        |> Enum.flat_map(fn p ->
+          nodes
+          |> Enum.filter(&(&1.parent_id == p.id))
+          |> Tree.sort_siblings()
+        end)
+
+      if Enum.empty?(all_cousins) do
+        current.id
+      else
+        current_index = Enum.find_index(all_cousins, &(&1.id == current.id)) || 0
+        next_index = rem(current_index + 1, length(all_cousins))
+        Enum.at(all_cousins, next_index).id
+      end
+    end
+  end
+
+  # Find the previous node across subtrees at the same depth level
+  defp find_prev_cousin(nodes, current, root_id) do
+    parent_id = current.parent_id
+
+    # If at root level, just wrap siblings
+    if parent_id == root_id or parent_id == nil do
+      all_siblings =
+        nodes
+        |> Enum.filter(&(&1.parent_id == parent_id))
+        |> Tree.sort_siblings()
+
+      current_index = Enum.find_index(all_siblings, &(&1.id == current.id))
+      prev_index = rem(current_index - 1 + length(all_siblings), length(all_siblings))
+      Enum.at(all_siblings, prev_index).id
+    else
+      # Get parent and its siblings (aunts/uncles)
+      parent = Enum.find(nodes, &(&1.id == parent_id))
+      parent_siblings =
+        nodes
+        |> Enum.filter(&(&1.parent_id == parent.parent_id))
+        |> Tree.sort_siblings()
+
+      # Get all children of all parent siblings (cousins + siblings), sorted by parent order
+      all_cousins =
+        parent_siblings
+        |> Enum.flat_map(fn p ->
+          nodes
+          |> Enum.filter(&(&1.parent_id == p.id))
+          |> Tree.sort_siblings()
+        end)
+
+      if Enum.empty?(all_cousins) do
+        current.id
+      else
+        current_index = Enum.find_index(all_cousins, &(&1.id == current.id)) || 0
+        prev_index = rem(current_index - 1 + length(all_cousins), length(all_cousins))
+        Enum.at(all_cousins, prev_index).id
+      end
+    end
   end
 
   @doc """

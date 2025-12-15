@@ -34,7 +34,8 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:undo_timer, nil)
      |> assign(:editing_node_id, nil)
      |> assign(:link_edit_node, nil)
-     |> assign(:context_menu, nil)}
+     |> assign(:context_menu, nil)
+     |> assign(:hints_expanded, false)}
   end
 
   defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)

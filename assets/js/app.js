@@ -130,7 +130,6 @@ const Hooks = {
       this.startY = 0
       this.startPanX = 0
       this.startPanY = 0
-      this.spacePressed = false
 
       // Debounce timer for localStorage
       this.saveTimer = null
@@ -152,7 +151,6 @@ const Hooks = {
       this.handleMouseMove = this.handleMouseMove.bind(this)
       this.handleMouseUp = this.handleMouseUp.bind(this)
       this.handleKeyDown = this.handleKeyDown.bind(this)
-      this.handleKeyUp = this.handleKeyUp.bind(this)
 
       // Attach event listeners
       this.el.addEventListener("wheel", this.handleWheel, { passive: false })
@@ -160,7 +158,6 @@ const Hooks = {
       window.addEventListener("mousemove", this.handleMouseMove)
       window.addEventListener("mouseup", this.handleMouseUp)
       window.addEventListener("keydown", this.handleKeyDown)
-      window.addEventListener("keyup", this.handleKeyUp)
 
       // Listen for scroll-to-node events from LiveView
       this.handleEvent("scroll-to-node", ({ id }) => {
@@ -197,7 +194,6 @@ const Hooks = {
       window.removeEventListener("mousemove", this.handleMouseMove)
       window.removeEventListener("mouseup", this.handleMouseUp)
       window.removeEventListener("keydown", this.handleKeyDown)
-      window.removeEventListener("keyup", this.handleKeyUp)
       if (this.saveTimer) clearTimeout(this.saveTimer)
     },
 
@@ -249,8 +245,8 @@ const Hooks = {
                            e.target.tagName === "path" ||
                            e.target.tagName === "g"
 
-      // Middle mouse button, space + left click, or left click on empty space = start panning
-      if (e.button === 1 || (e.button === 0 && this.spacePressed) || (e.button === 0 && isEmptySpace)) {
+      // Middle mouse button or left click on empty space = start panning
+      if (e.button === 1 || (e.button === 0 && isEmptySpace)) {
         e.preventDefault()
         this.isPanning = true
         this.startX = e.clientX
@@ -274,7 +270,7 @@ const Hooks = {
     handleMouseUp(e) {
       if (this.isPanning) {
         this.isPanning = false
-        this.el.style.cursor = this.spacePressed ? "grab" : ""
+        this.el.style.cursor = ""
         this.saveViewportState()
       }
     },
@@ -282,14 +278,6 @@ const Hooks = {
     handleKeyDown(e) {
       // Check if target is an input/textarea (with safety check for non-element targets)
       const isInputTarget = e.target?.matches?.("input, textarea")
-
-      // Space key for pan mode
-      if (e.code === "Space" && !isInputTarget) {
-        if (!this.spacePressed) {
-          this.spacePressed = true
-          this.el.style.cursor = "grab"
-        }
-      }
 
       // Zoom shortcuts (only when not in input)
       if (!isInputTarget) {
@@ -302,15 +290,6 @@ const Hooks = {
         } else if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
           e.preventDefault()
           this.zoomTo(1.0)
-        }
-      }
-    },
-
-    handleKeyUp(e) {
-      if (e.code === "Space") {
-        this.spacePressed = false
-        if (!this.isPanning) {
-          this.el.style.cursor = ""
         }
       }
     },
