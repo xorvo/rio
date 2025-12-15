@@ -1,2 +1,2 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(MindMapperPoc.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(WorkTree.Repo, :manual)

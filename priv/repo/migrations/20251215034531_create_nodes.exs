@@ -1,4 +1,4 @@
-defmodule MindMapperPoc.Repo.Migrations.CreateNodes do
+defmodule WorkTree.Repo.Migrations.CreateNodes do
   use Ecto.Migration
 
   def change do

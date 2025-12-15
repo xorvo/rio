@@ -1,4 +1,4 @@
-defmodule MindMapperPoc.Repo.Migrations.CreateAttachments do
+defmodule WorkTree.Repo.Migrations.CreateAttachments do
   use Ecto.Migration
 
   def change do
