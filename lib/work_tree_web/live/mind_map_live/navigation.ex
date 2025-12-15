@@ -5,6 +5,7 @@ defmodule WorkTreeWeb.MindMapLive.Navigation do
   """
 
   import Phoenix.Component, only: [assign: 3]
+  import Phoenix.LiveView, only: [push_event: 3]
 
   @doc """
   Navigate to a relative position based on direction.
@@ -56,7 +57,9 @@ defmodule WorkTreeWeb.MindMapLive.Navigation do
           if prev, do: prev.id, else: focused_id
       end
 
-    assign(socket, :focused_node_id, new_id)
+    socket
+    |> assign(:focused_node_id, new_id)
+    |> push_event("scroll-to-node", %{id: new_id})
   end
 
   @doc """

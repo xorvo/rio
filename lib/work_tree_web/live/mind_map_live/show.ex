@@ -58,6 +58,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     |> assign(:modal_action, nil)
     |> assign(:focused_node_id, new_node.id)
     |> assign(:editing_node_id, new_node.id)
+    |> push_event("scroll-to-node", %{id: new_node.id})
   end
 
   defp apply_action(socket, :edit, %{"node_id" => node_id}) do
@@ -72,7 +73,10 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_event("focus_node", %{"id" => id}, socket) do
     id = String.to_integer(id)
 
-    {:noreply, assign(socket, :focused_node_id, id)}
+    {:noreply,
+     socket
+     |> assign(:focused_node_id, id)
+     |> push_event("scroll-to-node", %{id: id})}
   end
 
   def handle_event("open_node_detail", %{"id" => id}, socket) do
@@ -91,7 +95,11 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   def handle_event("navigate", %{"direction" => direction}, socket) do
     new_focus = Navigation.navigate(socket, direction)
-    {:noreply, assign(socket, :focused_node_id, new_focus)}
+
+    {:noreply,
+     socket
+     |> assign(:focused_node_id, new_focus)
+     |> push_event("scroll-to-node", %{id: new_focus})}
   end
 
   def handle_event("toggle_todo", %{"id" => id}, socket) do
@@ -199,6 +207,27 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     end
   end
 
+  def handle_event("inline_edit_keydown", %{"key" => "Escape", "id" => id}, socket) do
+    node_id = String.to_integer(id)
+    node = MindMaps.get_node!(node_id)
+
+    if node.title == "New node" do
+      {:ok, _} = MindMaps.delete_node(node)
+
+      {:noreply,
+       socket
+       |> reload_tree()
+       |> assign(:editing_node_id, nil)
+       |> assign(:focused_node_id, node.parent_id || socket.assigns.root.id)}
+    else
+      {:noreply, assign(socket, :editing_node_id, nil)}
+    end
+  end
+
+  def handle_event("inline_edit_keydown", _params, socket) do
+    {:noreply, socket}
+  end
+
   def handle_event("start_inline_edit", %{"id" => id}, socket) do
     {:noreply, assign(socket, :editing_node_id, String.to_integer(id))}
   end
@@ -246,7 +275,8 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      socket
      |> reload_tree()
      |> assign(:focused_node_id, new_node.id)
-     |> assign(:editing_node_id, new_node.id)}
+     |> assign(:editing_node_id, new_node.id)
+     |> push_event("scroll-to-node", %{id: new_node.id})}
   end
 
   @impl true

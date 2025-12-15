@@ -4,10 +4,17 @@ defmodule WorkTree.MindMaps.Layout do
   Uses a horizontal tree layout algorithm (root on left, children branch right).
   """
 
-  @node_width 180
-  @node_height 50
+  @node_width 200
+  @min_node_height 44
   @horizontal_gap 60
   @vertical_gap 20
+
+  # Layout calculation constants
+  # With 200px width and ~14px padding each side, we have ~172px text width
+  # At 13px font size, roughly 24 chars per line
+  @chars_per_line 24
+  @line_height 19
+  @vertical_padding 24
 
   @doc """
   Calculates positions for all nodes in a tree.
@@ -24,6 +31,7 @@ defmodule WorkTree.MindMaps.Layout do
 
   defp layout_node(node, x, y) do
     children = Map.get(node, :children, [])
+    node_height = calculate_node_height(node)
 
     if Enum.empty?(children) do
       # Leaf node
@@ -32,11 +40,11 @@ defmodule WorkTree.MindMaps.Layout do
           x: x,
           y: y,
           width: @node_width,
-          height: @node_height
+          height: node_height
         }
       }
 
-      {layout, @node_height}
+      {layout, node_height}
     else
       # Internal node - layout children first
       child_x = x + @node_width + @horizontal_gap
@@ -54,19 +62,39 @@ defmodule WorkTree.MindMaps.Layout do
         Enum.sum(children_heights) + @vertical_gap * (length(children) - 1)
 
       # Center parent vertically relative to children
-      parent_y = y + (total_children_height - @node_height) / 2
+      parent_y = y + (total_children_height - node_height) / 2
 
       parent_layout = %{
         node.id => %{
           x: x,
           y: parent_y,
           width: @node_width,
-          height: @node_height
+          height: node_height
         }
       }
 
       {Map.merge(children_layouts, parent_layout), total_children_height}
     end
+  end
+
+  @doc """
+  Calculates the height of a node based on its title length.
+  Short titles get compact nodes, long titles get taller nodes.
+  """
+  def calculate_node_height(node) do
+    title = Map.get(node, :title, "")
+    char_count = String.length(title)
+
+    # Calculate number of lines needed (approximate)
+    lines = max(1, ceil(char_count / @chars_per_line))
+
+    # Cap at 5 lines max (matches CSS line-clamp)
+    lines = min(lines, 5)
+
+    # Calculate height: padding + lines * line_height
+    height = @vertical_padding + lines * @line_height
+
+    max(height, @min_node_height)
   end
 
   @doc """

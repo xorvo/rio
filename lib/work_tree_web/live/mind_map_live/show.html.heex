@@ -2,7 +2,8 @@
   id="mind-map-container"
   class="mind-map-container"
   phx-window-keydown="keydown"
-  phx-hook="DisableTab"
+  phx-hook="MindMapCanvas"
+  data-root-id={@root.id}
 >
   <%!-- Breadcrumb navigation --%>
   <div :if={@ancestors != []} class="mind-map-breadcrumb">
@@ -131,27 +132,23 @@
           node.is_todo && node.todo_completed && "completed",
           @editing_node_id == node.id && "editing"
         ]}
-        style={"left: #{pos.x}px; top: #{pos.y}px; width: #{pos.width}px;"}
+        style={"left: #{pos.x}px; top: #{pos.y}px; width: #{pos.width}px; height: #{pos.height}px;"}
         phx-click="focus_node"
         phx-value-id={node.id}
         phx-hook="NodeContextMenu"
         data-node-id={node.id}
       >
         <%= if @editing_node_id == node.id do %>
-          <form phx-submit="save_inline_edit" phx-value-id={node.id}>
-            <input
-              type="text"
+          <form phx-submit="save_inline_edit" phx-value-id={node.id} class="h-full">
+            <textarea
               name="title"
-              value={node.title}
               class="mind-map-inline-input"
-              phx-hook="FocusEnd"
+              phx-hook="InlineEditTextarea"
               id={"inline-edit-#{node.id}"}
-              phx-keydown="cancel_inline_edit"
-              phx-key="Escape"
+              phx-keydown="inline_edit_keydown"
               phx-value-id={node.id}
               phx-blur="blur_inline_edit"
-              autocomplete="off"
-            />
+            ><%= node.title %></textarea>
           </form>
         <% else %>
           <div class="mind-map-node-title">
@@ -163,6 +160,41 @@
         </div>
       </div>
     <% end %>
+  </div>
+
+  <%!-- Zoom controls --%>
+  <div class="mind-map-controls">
+    <button
+      type="button"
+      class="btn btn-ghost btn-xs btn-square"
+      onclick="document.getElementById('mind-map-container').__liveViewHook?.zoomIn()"
+      title="Zoom in (+)"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+    </button>
+    <span data-zoom-level class="text-xs font-mono text-center min-w-[3rem]">100%</span>
+    <button
+      type="button"
+      class="btn btn-ghost btn-xs btn-square"
+      onclick="document.getElementById('mind-map-container').__liveViewHook?.zoomOut()"
+      title="Zoom out (-)"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+      </svg>
+    </button>
+    <button
+      type="button"
+      class="btn btn-ghost btn-xs btn-square"
+      onclick="document.getElementById('mind-map-container').__liveViewHook?.fitToView()"
+      title="Fit to view"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+      </svg>
+    </button>
   </div>
 
   <%!-- Keyboard shortcuts hint --%>
@@ -178,6 +210,10 @@
     <span class="kbd kbd-xs">t</span> toggle todo
     <span class="mx-2">·</span>
     <span class="kbd kbd-xs">⌫</span> delete
+    <span class="mx-2">·</span>
+    <span class="kbd kbd-xs">Space</span>+drag pan
+    <span class="mx-2">·</span>
+    scroll zoom
   </div>
 
   <%!-- Undo toast notification --%>
