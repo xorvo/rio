@@ -199,8 +199,16 @@ const Hooks = {
     },
 
     handleMouseDown(e) {
-      // Middle mouse button or space + left click = start panning
-      if (e.button === 1 || (e.button === 0 && this.spacePressed)) {
+      // Check if clicking on empty space (container, canvas, or SVG layer - not on a node)
+      const isEmptySpace = e.target === this.el ||
+                           e.target === this.canvas ||
+                           e.target.classList.contains("mind-map-svg") ||
+                           e.target.tagName === "svg" ||
+                           e.target.tagName === "path" ||
+                           e.target.tagName === "g"
+
+      // Middle mouse button, space + left click, or left click on empty space = start panning
+      if (e.button === 1 || (e.button === 0 && this.spacePressed) || (e.button === 0 && isEmptySpace)) {
         e.preventDefault()
         this.isPanning = true
         this.startX = e.clientX
