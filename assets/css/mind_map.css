@@ -259,22 +259,6 @@
   color: var(--color-success-content);
 }
 
-/* Locked badge */
-.mind-map-locked-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--color-warning);
-  color: var(--color-warning-content);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px oklch(0% 0 0 / 15%);
-}
-
 /* Link indicator */
 .mind-map-link-indicator {
   position: absolute;
