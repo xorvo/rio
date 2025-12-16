@@ -186,6 +186,8 @@
   line-height: 1.4;
   word-break: break-word;
   overflow: hidden;
+  /* Prevent text reflow/twitching during zoom */
+  text-wrap: stable;
 }
 
 /* TODO indicator */

@@ -375,7 +375,10 @@ const Hooks = {
 
     applyTransform() {
       if (this.canvas) {
-        this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`
+        // Use CSS zoom for scaling (keeps text crisp) and transform only for panning
+        // The pan values need to be adjusted for zoom since zoom affects the coordinate space
+        this.canvas.style.zoom = this.zoom
+        this.canvas.style.transform = `translate(${this.panX / this.zoom}px, ${this.panY / this.zoom}px)`
       }
     },
 
