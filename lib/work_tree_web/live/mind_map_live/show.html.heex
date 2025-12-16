@@ -46,139 +46,66 @@
         </svg>
         Theme
       </div>
-      <ul
+      <div
         tabindex="0"
-        class="dropdown-content menu bg-base-200 rounded-box z-50 w-44 p-2 shadow-lg max-h-80 overflow-y-auto"
+        class="dropdown-content bg-base-200 rounded-box z-50 p-3 shadow-lg"
       >
-        <li class="menu-title text-xs">System</li>
-        <li>
-          <button data-phx-theme="system" phx-click={JS.dispatch("phx:set-theme")}>Auto</button>
-        </li>
-        <li class="menu-title text-xs mt-2">Light Themes</li>
-        <li>
-          <button data-phx-theme="light" phx-click={JS.dispatch("phx:set-theme")}>Light</button>
-        </li>
-        <li>
-          <button data-phx-theme="cupcake" phx-click={JS.dispatch("phx:set-theme")}>
-            Cupcake
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="bumblebee" phx-click={JS.dispatch("phx:set-theme")}>
-            Bumblebee
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="emerald" phx-click={JS.dispatch("phx:set-theme")}>
-            Emerald
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="corporate" phx-click={JS.dispatch("phx:set-theme")}>
-            Corporate
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="retro" phx-click={JS.dispatch("phx:set-theme")}>Retro</button>
-        </li>
-        <li>
-          <button data-phx-theme="garden" phx-click={JS.dispatch("phx:set-theme")}>Garden</button>
-        </li>
-        <li>
-          <button data-phx-theme="lofi" phx-click={JS.dispatch("phx:set-theme")}>Lofi</button>
-        </li>
-        <li>
-          <button data-phx-theme="pastel" phx-click={JS.dispatch("phx:set-theme")}>Pastel</button>
-        </li>
-        <li>
-          <button data-phx-theme="fantasy" phx-click={JS.dispatch("phx:set-theme")}>
-            Fantasy
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="wireframe" phx-click={JS.dispatch("phx:set-theme")}>
-            Wireframe
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="cmyk" phx-click={JS.dispatch("phx:set-theme")}>CMYK</button>
-        </li>
-        <li>
-          <button data-phx-theme="autumn" phx-click={JS.dispatch("phx:set-theme")}>Autumn</button>
-        </li>
-        <li>
-          <button data-phx-theme="acid" phx-click={JS.dispatch("phx:set-theme")}>Acid</button>
-        </li>
-        <li>
-          <button data-phx-theme="lemonade" phx-click={JS.dispatch("phx:set-theme")}>
-            Lemonade
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="winter" phx-click={JS.dispatch("phx:set-theme")}>Winter</button>
-        </li>
-        <li>
-          <button data-phx-theme="nord" phx-click={JS.dispatch("phx:set-theme")}>Nord</button>
-        </li>
-        <li class="menu-title text-xs mt-2">Dark Themes</li>
-        <li>
-          <button data-phx-theme="dark" phx-click={JS.dispatch("phx:set-theme")}>Dark</button>
-        </li>
-        <li>
-          <button data-phx-theme="synthwave" phx-click={JS.dispatch("phx:set-theme")}>
-            Synthwave
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="cyberpunk" phx-click={JS.dispatch("phx:set-theme")}>
-            Cyberpunk
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="valentine" phx-click={JS.dispatch("phx:set-theme")}>
-            Valentine
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="halloween" phx-click={JS.dispatch("phx:set-theme")}>
-            Halloween
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="forest" phx-click={JS.dispatch("phx:set-theme")}>Forest</button>
-        </li>
-        <li>
-          <button data-phx-theme="aqua" phx-click={JS.dispatch("phx:set-theme")}>Aqua</button>
-        </li>
-        <li>
-          <button data-phx-theme="black" phx-click={JS.dispatch("phx:set-theme")}>Black</button>
-        </li>
-        <li>
-          <button data-phx-theme="luxury" phx-click={JS.dispatch("phx:set-theme")}>Luxury</button>
-        </li>
-        <li>
-          <button data-phx-theme="dracula" phx-click={JS.dispatch("phx:set-theme")}>
-            Dracula
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="business" phx-click={JS.dispatch("phx:set-theme")}>
-            Business
-          </button>
-        </li>
-        <li>
-          <button data-phx-theme="night" phx-click={JS.dispatch("phx:set-theme")}>Night</button>
-        </li>
-        <li>
-          <button data-phx-theme="coffee" phx-click={JS.dispatch("phx:set-theme")}>Coffee</button>
-        </li>
-        <li>
-          <button data-phx-theme="dim" phx-click={JS.dispatch("phx:set-theme")}>Dim</button>
-        </li>
-        <li>
-          <button data-phx-theme="sunset" phx-click={JS.dispatch("phx:set-theme")}>Sunset</button>
-        </li>
-      </ul>
+        <div class="flex gap-6">
+          <%!-- System column --%>
+          <div class="flex flex-col gap-1">
+            <div class="text-xs font-semibold text-base-content/60 px-2 pb-1">System</div>
+            <button data-phx-theme="system" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Auto</button>
+          </div>
+          <%!-- Light themes column --%>
+          <div class="flex flex-col gap-1">
+            <div class="text-xs font-semibold text-base-content/60 px-2 pb-1">Light</div>
+            <button data-phx-theme="light" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Light</button>
+            <button data-phx-theme="cupcake" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Cupcake</button>
+            <button data-phx-theme="bumblebee" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Bumblebee</button>
+            <button data-phx-theme="emerald" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Emerald</button>
+            <button data-phx-theme="corporate" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Corporate</button>
+            <button data-phx-theme="retro" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Retro</button>
+            <button data-phx-theme="garden" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Garden</button>
+            <button data-phx-theme="lofi" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Lofi</button>
+            <button data-phx-theme="pastel" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Pastel</button>
+          </div>
+          <%!-- More light themes column --%>
+          <div class="flex flex-col gap-1">
+            <div class="text-xs font-semibold text-base-content/60 px-2 pb-1">&nbsp;</div>
+            <button data-phx-theme="fantasy" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Fantasy</button>
+            <button data-phx-theme="wireframe" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Wireframe</button>
+            <button data-phx-theme="cmyk" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">CMYK</button>
+            <button data-phx-theme="autumn" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Autumn</button>
+            <button data-phx-theme="acid" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Acid</button>
+            <button data-phx-theme="lemonade" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Lemonade</button>
+            <button data-phx-theme="winter" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Winter</button>
+            <button data-phx-theme="nord" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Nord</button>
+          </div>
+          <%!-- Dark themes column --%>
+          <div class="flex flex-col gap-1">
+            <div class="text-xs font-semibold text-base-content/60 px-2 pb-1">Dark</div>
+            <button data-phx-theme="dark" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Dark</button>
+            <button data-phx-theme="synthwave" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Synthwave</button>
+            <button data-phx-theme="cyberpunk" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Cyberpunk</button>
+            <button data-phx-theme="valentine" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Valentine</button>
+            <button data-phx-theme="halloween" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Halloween</button>
+            <button data-phx-theme="forest" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Forest</button>
+            <button data-phx-theme="aqua" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Aqua</button>
+            <button data-phx-theme="black" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Black</button>
+          </div>
+          <%!-- More dark themes column --%>
+          <div class="flex flex-col gap-1">
+            <div class="text-xs font-semibold text-base-content/60 px-2 pb-1">&nbsp;</div>
+            <button data-phx-theme="luxury" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Luxury</button>
+            <button data-phx-theme="dracula" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Dracula</button>
+            <button data-phx-theme="business" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Business</button>
+            <button data-phx-theme="night" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Night</button>
+            <button data-phx-theme="coffee" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Coffee</button>
+            <button data-phx-theme="dim" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Dim</button>
+            <button data-phx-theme="sunset" phx-click={JS.dispatch("phx:set-theme")} class="btn btn-ghost btn-sm justify-start">Sunset</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

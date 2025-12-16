@@ -284,11 +284,6 @@
   transform: scale(1.1);
 }
 
-/* Adjust link indicator position when todo indicator is present */
-.mind-map-node.todo .mind-map-link-indicator {
-  right: 20px;
-}
-
 /* Edges (SVG) */
 .mind-map-edge {
   stroke: var(--color-base-300);
