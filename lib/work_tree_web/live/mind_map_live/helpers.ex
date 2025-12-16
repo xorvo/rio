@@ -89,6 +89,26 @@ defmodule WorkTreeWeb.MindMapLive.Helpers do
   end
 
   @doc """
+  Gets the count of all descendants (children, grandchildren, etc.) of a node.
+  Used for the drag badge showing how many nodes will be moved.
+  """
+  def get_subtree_count(node, nodes) do
+    get_descendant_ids(node, nodes) |> length()
+  end
+
+  @doc """
+  Gets all descendant IDs of a node (for drag validation).
+  Returns a list of node IDs that are descendants of the given node.
+  """
+  def get_descendant_ids(node, nodes) do
+    direct_children = Enum.filter(nodes, &(&1.parent_id == node.id))
+
+    Enum.flat_map(direct_children, fn child ->
+      [child.id | get_descendant_ids(child, nodes)]
+    end)
+  end
+
+  @doc """
   Creates a curved bezier path for an edge between nodes.
   """
   def edge_path(edge) do

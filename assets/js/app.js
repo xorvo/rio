@@ -160,6 +160,388 @@ const Hooks = {
       this.el.removeEventListener("keydown", this.handleKeydown)
     }
   },
+  NodeDrag: {
+    mounted() {
+      this.nodeId = parseInt(this.el.dataset.nodeId)
+      this.isRoot = this.el.dataset.isRoot === "true"
+      this.isLocked = this.el.dataset.locked === "true"
+      this.subtreeCount = parseInt(this.el.dataset.subtreeCount || "0")
+      this.descendantIds = JSON.parse(this.el.dataset.descendantIds || "[]")
+
+      // Drag state
+      this.isDragging = false
+      this.dragStartX = 0
+      this.dragStartY = 0
+      this.dragThreshold = 5
+      this.ghostElement = null
+      this.ghostOffsetX = 0
+      this.ghostOffsetY = 0
+      this.currentTarget = null
+
+      // Edge panning state
+      this.edgePanInterval = null
+      this.edgePanSpeed = 15
+      this.edgePanThreshold = 50
+
+      // Bind handlers
+      this.handleMouseDown = this.handleMouseDown.bind(this)
+      this.handleMouseMove = this.handleMouseMove.bind(this)
+      this.handleMouseUp = this.handleMouseUp.bind(this)
+      this.handleKeyDown = this.handleKeyDown.bind(this)
+      this.handleContextMenu = this.handleContextMenu.bind(this)
+      this.handleDoubleClick = this.handleDoubleClick.bind(this)
+
+      this.el.addEventListener("mousedown", this.handleMouseDown)
+      this.el.addEventListener("contextmenu", this.handleContextMenu)
+      this.el.addEventListener("dblclick", this.handleDoubleClick)
+    },
+
+    updated() {
+      // Update data attributes when LiveView updates
+      this.isRoot = this.el.dataset.isRoot === "true"
+      this.isLocked = this.el.dataset.locked === "true"
+      this.subtreeCount = parseInt(this.el.dataset.subtreeCount || "0")
+      this.descendantIds = JSON.parse(this.el.dataset.descendantIds || "[]")
+    },
+
+    destroyed() {
+      this.el.removeEventListener("mousedown", this.handleMouseDown)
+      this.el.removeEventListener("contextmenu", this.handleContextMenu)
+      this.el.removeEventListener("dblclick", this.handleDoubleClick)
+      this.cleanup()
+    },
+
+    // Context menu handler (right-click)
+    handleContextMenu(e) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      // Pre-adjust position to keep menu within viewport
+      const menuWidth = 240
+      const menuHeight = 520
+      const padding = 16
+      const bottomPadding = 60
+
+      let x = e.clientX
+      let y = e.clientY
+
+      if (x + menuWidth > window.innerWidth - padding) {
+        x = window.innerWidth - menuWidth - padding
+      }
+      if (y + menuHeight > window.innerHeight - bottomPadding) {
+        y = window.innerHeight - menuHeight - bottomPadding
+      }
+      x = Math.max(padding, x)
+      y = Math.max(padding, y)
+
+      this.pushEvent("open_context_menu", { id: this.nodeId, x: x, y: y })
+    },
+
+    // Double-click handler (start inline editing)
+    handleDoubleClick(e) {
+      e.preventDefault()
+      e.stopPropagation()
+      this.pushEvent("start_inline_edit", { id: this.nodeId })
+    },
+
+    handleMouseDown(e) {
+      // Only handle left mouse button
+      if (e.button !== 0) return
+
+      // Don't interfere with other interactions
+      if (e.target.closest("a, button, input, textarea, form")) return
+
+      // Store meta/ctrl key state for focus handling on mouseup
+      this.mouseDownMetaKey = e.metaKey
+      this.mouseDownCtrlKey = e.ctrlKey
+
+      // Record start position
+      this.dragStartX = e.clientX
+      this.dragStartY = e.clientY
+
+      // Add global listeners
+      window.addEventListener("mousemove", this.handleMouseMove)
+      window.addEventListener("mouseup", this.handleMouseUp)
+      window.addEventListener("keydown", this.handleKeyDown)
+    },
+
+    handleMouseMove(e) {
+      const dx = e.clientX - this.dragStartX
+      const dy = e.clientY - this.dragStartY
+      const distance = Math.sqrt(dx * dx + dy * dy)
+
+      // Check if we've exceeded the drag threshold
+      if (!this.isDragging && distance > this.dragThreshold) {
+        // Don't start drag if root node
+        if (!this.isRoot) {
+          this.startDrag(e)
+        }
+      }
+
+      if (this.isDragging) {
+        this.updateGhostPosition(e.clientX, e.clientY)
+        this.updateDropTargets(e.clientX, e.clientY)
+        this.checkEdgePan(e.clientX, e.clientY)
+      }
+    },
+
+    handleMouseUp(e) {
+      if (this.isDragging) {
+        this.executeDrop()
+      } else {
+        // If we didn't drag, this was a click - focus the node
+        this.pushEvent("focus_node", {
+          id: String(this.nodeId),
+          metaKey: this.mouseDownMetaKey || false,
+          ctrlKey: this.mouseDownCtrlKey || false
+        })
+      }
+      this.cleanup()
+    },
+
+    handleKeyDown(e) {
+      // Cancel drag with Escape key
+      if (e.key === "Escape" && this.isDragging) {
+        e.preventDefault()
+        this.cleanup()
+        this.pushEvent("drag_cancel", {})
+      }
+    },
+
+    startDrag(e) {
+      this.isDragging = true
+
+      // Add dragging class to source node
+      this.el.classList.add("dragging")
+
+      // Add global dragging class to body
+      document.body.classList.add("dragging-node")
+
+      // Create ghost element
+      this.createGhost(e)
+
+      // Notify server
+      this.pushEvent("drag_start", { node_id: this.nodeId })
+    },
+
+    createGhost(e) {
+      // Get visual bounding rect (already includes canvas zoom)
+      const rect = this.el.getBoundingClientRect()
+
+      // Get the current canvas zoom level
+      const container = document.getElementById("mind-map-container")
+      const canvasZoom = container?.__liveViewHook?.zoom || 1
+
+      // Clone the actual node for perfect visual match
+      this.ghostElement = this.el.cloneNode(true)
+
+      // Remove any IDs to avoid duplicates
+      this.ghostElement.removeAttribute("id")
+      this.ghostElement.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"))
+
+      // Remove hooks and event-related attributes
+      this.ghostElement.removeAttribute("phx-hook")
+      this.ghostElement.querySelectorAll("[phx-hook]").forEach(el => el.removeAttribute("phx-hook"))
+
+      // The cloned node has original (unzoomed) dimensions in its inline style
+      // We need to keep those and use transform to scale it to match the visual size
+      // rect.width/height are the visual (zoomed) dimensions we want to match
+      this.ghostElement.className = "mind-map-node-ghost"
+
+      // Clear inline positioning but keep width/height from original
+      const originalWidth = parseFloat(this.el.style.width) || rect.width / canvasZoom
+      const originalHeight = parseFloat(this.el.style.height) || rect.height / canvasZoom
+
+      this.ghostElement.style.cssText = ""
+      this.ghostElement.style.position = "fixed"
+      this.ghostElement.style.width = `${originalWidth}px`
+      this.ghostElement.style.height = `${originalHeight}px`
+
+      // Scale down to match visual size, plus slight extra scale-down and rotation for effect
+      const visualScale = canvasZoom * 0.95
+      this.ghostElement.style.transform = `scale(${visualScale}) rotate(2deg)`
+      this.ghostElement.style.transformOrigin = "top left"
+
+      // Add subtree badge if there are descendants
+      if (this.subtreeCount > 0) {
+        const badge = document.createElement("div")
+        badge.className = "drag-subtree-badge"
+        badge.textContent = `+${this.subtreeCount} node${this.subtreeCount > 1 ? "s" : ""}`
+        this.ghostElement.appendChild(badge)
+      }
+
+      // Calculate offset from cursor to top-left of node (in visual/screen coords)
+      this.ghostOffsetX = e.clientX - rect.left
+      this.ghostOffsetY = e.clientY - rect.top
+
+      // Position ghost at the node's visual position
+      this.ghostElement.style.left = `${rect.left}px`
+      this.ghostElement.style.top = `${rect.top}px`
+
+      document.body.appendChild(this.ghostElement)
+    },
+
+    updateGhostPosition(clientX, clientY) {
+      if (this.ghostElement) {
+        this.ghostElement.style.left = `${clientX - this.ghostOffsetX}px`
+        this.ghostElement.style.top = `${clientY - this.ghostOffsetY}px`
+      }
+    },
+
+    updateDropTargets(clientX, clientY) {
+      const canvas = document.getElementById("mind-map-canvas")
+      if (!canvas) return
+
+      const nodes = canvas.querySelectorAll(".mind-map-node:not(.dragging)")
+
+      // Clear previous highlights
+      document.querySelectorAll(".drop-target, .drop-target-invalid").forEach(el => {
+        el.classList.remove("drop-target", "drop-target-invalid")
+      })
+
+      this.currentTarget = null
+
+      // Find node under cursor
+      for (const node of nodes) {
+        const rect = node.getBoundingClientRect()
+        if (clientX >= rect.left && clientX <= rect.right &&
+            clientY >= rect.top && clientY <= rect.bottom) {
+
+          const targetId = parseInt(node.dataset.nodeId)
+
+          if (this.isValidDropTarget(targetId, node)) {
+            node.classList.add("drop-target")
+            this.currentTarget = targetId
+          } else {
+            node.classList.add("drop-target-invalid")
+          }
+
+          return
+        }
+      }
+    },
+
+    isValidDropTarget(targetId, targetNode) {
+      // Cannot drop on self
+      if (targetId === this.nodeId) return false
+
+      // Cannot drop on descendant
+      if (this.descendantIds.includes(targetId)) return false
+
+      // Cannot drop on root node as target (would make this a sibling of root, not valid in this tree)
+      // Actually, we CAN drop on root to make it a child of root - that's valid
+      // The restriction is: cannot drop on a node that is the current root of the view
+      // But for now, let's allow dropping on any non-descendant
+
+      return true
+    },
+
+    checkEdgePan(clientX, clientY) {
+      const container = document.getElementById("mind-map-container")
+      if (!container) return
+
+      const rect = container.getBoundingClientRect()
+      const threshold = this.edgePanThreshold
+
+      let panX = 0
+      let panY = 0
+
+      if (clientX < rect.left + threshold) {
+        panX = this.edgePanSpeed
+      } else if (clientX > rect.right - threshold) {
+        panX = -this.edgePanSpeed
+      }
+
+      if (clientY < rect.top + threshold) {
+        panY = this.edgePanSpeed
+      } else if (clientY > rect.bottom - threshold) {
+        panY = -this.edgePanSpeed
+      }
+
+      if (panX !== 0 || panY !== 0) {
+        this.startEdgePan(panX, panY)
+      } else {
+        this.stopEdgePan()
+      }
+    },
+
+    startEdgePan(panX, panY) {
+      // If already panning, update the direction
+      if (this.edgePanInterval) {
+        this.edgePanX = panX
+        this.edgePanY = panY
+        return
+      }
+
+      this.edgePanX = panX
+      this.edgePanY = panY
+
+      const container = document.getElementById("mind-map-container")
+      const hook = container?.__liveViewHook
+
+      if (!hook) return
+
+      this.edgePanInterval = setInterval(() => {
+        hook.panX += this.edgePanX
+        hook.panY += this.edgePanY
+        hook.applyTransform()
+      }, 16) // ~60fps
+    },
+
+    stopEdgePan() {
+      if (this.edgePanInterval) {
+        clearInterval(this.edgePanInterval)
+        this.edgePanInterval = null
+
+        // Save viewport state after edge pan
+        const container = document.getElementById("mind-map-container")
+        container?.__liveViewHook?.saveViewportState()
+      }
+    },
+
+    executeDrop() {
+      if (this.currentTarget) {
+        this.pushEvent("drag_end", {
+          node_id: this.nodeId,
+          target_id: this.currentTarget
+        })
+      } else {
+        this.pushEvent("drag_cancel", {})
+      }
+    },
+
+    cleanup() {
+      // Remove drag state
+      this.isDragging = false
+
+      // Remove dragging class from source node
+      this.el.classList.remove("dragging")
+
+      // Remove global dragging class
+      document.body.classList.remove("dragging-node")
+
+      // Remove ghost element
+      if (this.ghostElement) {
+        this.ghostElement.remove()
+        this.ghostElement = null
+      }
+
+      // Clear drop target highlights
+      document.querySelectorAll(".drop-target, .drop-target-invalid").forEach(el => {
+        el.classList.remove("drop-target", "drop-target-invalid")
+      })
+
+      // Stop edge panning
+      this.stopEdgePan()
+
+      // Remove global listeners
+      window.removeEventListener("mousemove", this.handleMouseMove)
+      window.removeEventListener("mouseup", this.handleMouseUp)
+      window.removeEventListener("keydown", this.handleKeyDown)
+
+      this.currentTarget = null
+    }
+  },
   MindMapCanvas: {
     mounted() {
       this.canvas = this.el.querySelector("#mind-map-canvas")

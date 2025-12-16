@@ -3,7 +3,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   alias WorkTree.MindMaps
   alias WorkTree.MindMaps.Layout
-  alias WorkTreeWeb.MindMapLive.{Navigation, KeyboardHandlers, Helpers, SearchHandlers, DeletionHandlers, InlineEditHandlers, LinkHandlers}
+  alias WorkTreeWeb.MindMapLive.{Navigation, KeyboardHandlers, Helpers, SearchHandlers, DeletionHandlers, InlineEditHandlers, LinkHandlers, DragHandlers}
 
   @impl true
   def mount(params, _session, socket) do
@@ -39,7 +39,12 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:global_search_results, [])
      |> assign(:search_selected_index, 0)
      |> assign(:selected_node_ids, MapSet.new())
-     |> assign(:pending_deletion, nil)}
+     |> assign(:pending_deletion, nil)
+     |> assign(:dragging_node, nil)
+     |> assign(:drag_target_id, nil)
+     |> assign(:pending_move, nil)
+     |> assign(:move_undo_info, nil)
+     |> assign(:move_undo_timer, nil)}
   end
 
   defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)
@@ -191,6 +196,35 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_event("validate_link", _params, socket), do: LinkHandlers.validate_link(socket)
   def handle_event("open_node_link", params, socket), do: LinkHandlers.open_node_link(socket, params)
 
+  # Drag events - delegate to DragHandlers
+  def handle_event("drag_start", %{"node_id" => node_id}, socket) do
+    {:noreply, DragHandlers.start_drag(socket, node_id)}
+  end
+
+  def handle_event("drag_end", %{"node_id" => node_id, "target_id" => target_id}, socket) do
+    {:noreply, DragHandlers.execute_move(socket, node_id, target_id)}
+  end
+
+  def handle_event("drag_cancel", _, socket) do
+    {:noreply, DragHandlers.cancel_drag(socket)}
+  end
+
+  def handle_event("confirm_move", _, socket) do
+    {:noreply, DragHandlers.confirm_move(socket)}
+  end
+
+  def handle_event("cancel_move", _, socket) do
+    {:noreply, DragHandlers.cancel_pending_move(socket)}
+  end
+
+  def handle_event("undo_move", _, socket) do
+    {:noreply, DragHandlers.undo_move(socket)}
+  end
+
+  def handle_event("dismiss_move_undo", _, socket) do
+    {:noreply, DragHandlers.dismiss_undo(socket)}
+  end
+
   # Context menu events
   def handle_event("open_context_menu", %{"id" => id, "x" => x, "y" => y}, socket) do
     id = if is_binary(id), do: String.to_integer(id), else: id
@@ -225,6 +259,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   end
 
   def handle_info(:clear_undo, socket), do: DeletionHandlers.handle_clear_undo(socket)
+  def handle_info(:clear_move_undo, socket), do: DragHandlers.handle_clear_move_undo(socket)
 
   # Context menu action handlers
   def handle_info({:close_context_menu, _}, socket) do
@@ -430,4 +465,6 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   defp edge_path(edge), do: Helpers.edge_path(edge)
   defp priority_color(priority), do: Helpers.priority_class(priority, :css)
   defp node_children_count(node, nodes), do: Helpers.node_children_count(node, nodes)
+  defp get_subtree_count(node, nodes), do: Helpers.get_subtree_count(node, nodes)
+  defp get_descendant_ids(node, nodes), do: Helpers.get_descendant_ids(node, nodes)
 end

@@ -79,12 +79,17 @@
           MapSet.member?(@selected_node_ids, node.id) && "multi-selected",
           node.is_todo && "todo",
           node.is_todo && node.todo_completed && "completed",
-          @editing_node_id == node.id && "editing"
+          @editing_node_id == node.id && "editing",
+          node.id == @root.id && "is-root"
         ]}
         style={"left: #{pos.x}px; top: #{pos.y}px; width: #{pos.width}px; height: #{pos.height}px;"}
-        phx-hook="NodeContextMenu"
+        phx-hook="NodeDrag"
         data-node-id={node.id}
         data-node-link={node.link}
+        data-is-root={to_string(node.id == @root.id)}
+        data-locked={to_string(node.locked)}
+        data-subtree-count={get_subtree_count(node, @nodes)}
+        data-descendant-ids={Jason.encode!(get_descendant_ids(node, @nodes))}
       >
         <%= if @editing_node_id == node.id do %>
           <form phx-submit="save_inline_edit" phx-value-id={node.id} class="h-full">
@@ -104,7 +109,15 @@
           </div>
         <% end %>
         <div :if={node.is_todo} class="mind-map-todo-indicator">
-          {if node.todo_completed, do: "✓", else: "○"}
+          <%= if node.todo_completed do %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+          <% else %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <circle cx="12" cy="12" r="9" stroke-width="2" />
+            </svg>
+          <% end %>
         </div>
         <div
           :if={node.priority != nil}
@@ -209,6 +222,12 @@
 
   <%!-- Undo toast notification --%>
   <WorkTreeWeb.Components.ToastComponent.undo_toast deletion_batch={@deletion_batch} />
+
+  <%!-- Move undo toast notification --%>
+  <WorkTreeWeb.Components.ToastComponent.move_undo_toast move_undo_info={@move_undo_info} />
+
+  <%!-- Move locked node confirmation modal --%>
+  <WorkTreeWeb.Components.ToastComponent.move_confirmation_modal pending_move={@pending_move} />
 </div>
 
 <%!-- Node detail modal --%>

@@ -10,8 +10,8 @@ defmodule WorkTreeWeb.MindMapLive.DeletionHandlers do
   alias WorkTree.MindMaps
   alias WorkTreeWeb.MindMapLive.Helpers
 
-  # Undo timeout in milliseconds
-  @undo_timeout 5000
+  # Undo timeout in milliseconds (15 seconds)
+  @undo_timeout 15_000
 
   @doc """
   Deletes a node with undo capability.
