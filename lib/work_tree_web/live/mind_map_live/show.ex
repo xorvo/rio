@@ -989,4 +989,16 @@ defmodule WorkTreeWeb.MindMapLive.Show do
         "#{first} / ... / #{Enum.join(last_two, " / ")}"
     end
   end
+
+  # Helper to count direct children of a node
+  defp node_children_count(node, nodes) do
+    nodes
+    |> Enum.count(&(&1.parent_id == node.id))
+  end
+
+  # Helper to format date for display
+  defp format_date(nil), do: "—"
+  defp format_date(datetime) do
+    Calendar.strftime(datetime, "%b %d, %Y")
+  end
 end

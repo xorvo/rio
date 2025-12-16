@@ -423,75 +423,13 @@
 
 <%!-- Node detail modal --%>
 <.modal :if={@selected_node} id="node-detail-modal" show on_cancel={JS.push("close_detail")}>
-  <div class="space-y-5">
-    <%!-- Header --%>
-    <div>
-      <h3 class="text-base font-semibold text-base-content flex items-center gap-2">
-        <span
-          :if={@selected_node.is_todo}
-          class={"text-base #{if @selected_node.todo_completed, do: "text-success", else: "text-base-content/40"}"}
-        >
-          {if @selected_node.todo_completed, do: "☑", else: "☐"}
-        </span>
-        {@selected_node.title}
-      </h3>
-      <p :if={@selected_node.link} class="mt-1.5 text-xs text-info truncate">
-        <a
-          href={@selected_node.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="hover:underline"
-        >
-          {@selected_node.link}
-        </a>
-      </p>
-    </div>
-
-    <%!-- Content --%>
-    <div :if={@selected_node.body["content"]} class="prose prose-sm max-w-none">
-      <p class="text-base-content/80">{@selected_node.body["content"]}</p>
-    </div>
-
-    <%!-- Metadata --%>
-    <div :if={@selected_node.edge_label} class="text-sm">
-      <span class="text-base-content/50">Edge label:</span>
-      <span class="ml-1 text-base-content/80">{@selected_node.edge_label}</span>
-    </div>
-
-    <%!-- Actions --%>
-    <div class="border-t border-base-300 pt-4 flex flex-wrap gap-2">
-      <.link
-        patch={~p"/node/#{@root.id}/edit/#{@selected_node.id}"}
-        class="btn btn-sm btn-outline"
-      >
-        Edit
-      </.link>
-      <button
-        :if={@selected_node.is_todo}
-        phx-click="toggle_todo"
-        phx-value-id={@selected_node.id}
-        class="btn btn-sm btn-outline"
-      >
-        {if @selected_node.todo_completed, do: "Mark incomplete", else: "Mark complete"}
-      </button>
-      <button
-        phx-click="focus_subtree"
-        phx-value-id={@selected_node.id}
-        class="btn btn-sm btn-outline"
-      >
-        Focus subtree
-      </button>
-      <div class="flex-1"></div>
-      <button
-        :if={@selected_node.id != @root.id}
-        phx-click="delete_node"
-        phx-value-id={@selected_node.id}
-        class="btn btn-sm btn-ghost text-error"
-      >
-        Delete
-      </button>
-    </div>
-  </div>
+  <.live_component
+    module={WorkTreeWeb.Components.NodeDetailComponent}
+    id="node-detail"
+    node={@selected_node}
+    root_id={@root.id}
+    children_count={node_children_count(@selected_node, @nodes)}
+  />
 </.modal>
 
 <%!-- Edit node modal --%>
