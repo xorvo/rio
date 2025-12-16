@@ -222,6 +222,11 @@ const Hooks = {
         this.scrollToNode(id)
       })
 
+      // Listen for center-node events from LiveView (used when editing a node)
+      this.handleEvent("center-node", ({ id }) => {
+        this.centerNode(id)
+      })
+
       // Listen for open-focused-node-link events from LiveView (keyboard shortcut 'g')
       // We read the link from the DOM data attribute to open it directly
       this.handleEvent("open-focused-node-link", ({ node_id }) => {
@@ -446,6 +451,54 @@ const Hooks = {
         this.applyTransform()
         this.saveViewportState()
       }
+    },
+
+    centerNode(nodeId) {
+      const node = this.canvas?.querySelector(`#node-${nodeId}`)
+      if (!node) return
+
+      const rect = this.el.getBoundingClientRect()
+      const nodeX = parseFloat(node.style.left) || 0
+      const nodeY = parseFloat(node.style.top) || 0
+      const nodeWidth = parseFloat(node.style.width) || 200
+      const nodeHeight = parseFloat(node.style.height) || 32
+
+      // Center the node in the viewport
+      const targetViewX = (rect.width - nodeWidth * this.zoom) / 2
+      const targetViewY = (rect.height - nodeHeight * this.zoom) / 2
+
+      const targetPanX = targetViewX - nodeX * this.zoom
+      const targetPanY = targetViewY - nodeY * this.zoom
+
+      // Animate the pan smoothly
+      this.animatePan(targetPanX, targetPanY, 300)
+    },
+
+    animatePan(targetX, targetY, duration) {
+      const startX = this.panX
+      const startY = this.panY
+      const startTime = performance.now()
+
+      const animate = (currentTime) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+
+        // Ease out cubic for smooth deceleration
+        const eased = 1 - Math.pow(1 - progress, 3)
+
+        this.panX = startX + (targetX - startX) * eased
+        this.panY = startY + (targetY - startY) * eased
+
+        this.applyTransform()
+
+        if (progress < 1) {
+          requestAnimationFrame(animate)
+        } else {
+          this.saveViewportState()
+        }
+      }
+
+      requestAnimationFrame(animate)
     },
 
     loadViewportState() {

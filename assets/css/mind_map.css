@@ -133,57 +133,56 @@
 .mind-map-node {
   position: absolute;
   background: var(--color-base-100);
-  border: 2px solid var(--color-base-300);
+  border: 1px solid var(--color-base-300);
   border-radius: var(--radius-box);
-  padding: 10px 14px;
+  padding: 6px 10px;
   cursor: pointer;
   user-select: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  box-shadow: 0 2px 8px oklch(0% 0 0 / 6%);
+  box-shadow: 0 1px 4px oklch(0% 0 0 / 5%);
   box-sizing: border-box;
 }
 
 .mind-map-node:hover {
   border-color: oklch(from var(--color-primary) l c h / 60%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px oklch(0% 0 0 / 10%);
+  box-shadow: 0 2px 8px oklch(0% 0 0 / 8%);
 }
 
 .mind-map-node.focused {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 20%),
-              0 4px 12px oklch(0% 0 0 / 10%);
+  box-shadow: 0 0 0 2px oklch(from var(--color-primary) l c h / 20%),
+              0 2px 8px oklch(0% 0 0 / 8%);
 }
 
 .mind-map-node.selected {
   border-color: var(--color-primary);
   background: oklch(from var(--color-primary) l c h / 8%);
-  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 25%),
-              0 4px 16px oklch(0% 0 0 / 12%);
+  box-shadow: 0 0 0 2px oklch(from var(--color-primary) l c h / 25%),
+              0 2px 8px oklch(0% 0 0 / 8%);
 }
 
 .mind-map-node.multi-selected {
   border-color: var(--color-secondary);
   background: oklch(from var(--color-secondary) l c h / 12%);
-  box-shadow: 0 0 0 3px oklch(from var(--color-secondary) l c h / 30%),
-              0 4px 16px oklch(0% 0 0 / 12%);
+  box-shadow: 0 0 0 2px oklch(from var(--color-secondary) l c h / 30%),
+              0 2px 8px oklch(0% 0 0 / 8%);
 }
 
 .mind-map-node.multi-selected.focused {
   border-color: var(--color-secondary);
-  box-shadow: 0 0 0 4px oklch(from var(--color-secondary) l c h / 40%),
-              0 4px 16px oklch(0% 0 0 / 15%);
+  box-shadow: 0 0 0 2px oklch(from var(--color-secondary) l c h / 40%),
+              0 2px 8px oklch(0% 0 0 / 10%);
 }
 
 /* Node title */
 .mind-map-node-title {
-  font-weight: 500;
-  font-size: 13px;
+  font-weight: 400;
+  font-size: 12px;
   color: var(--color-base-content);
-  line-height: 1.4;
+  line-height: 1.35;
   word-break: break-word;
   overflow: hidden;
   /* Prevent text reflow/twitching during zoom */
@@ -193,19 +192,19 @@
 /* TODO indicator */
 .mind-map-todo-indicator {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 22px;
-  height: 22px;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--color-base-100);
-  border: 2px solid var(--color-base-300);
+  border: 1px solid var(--color-base-300);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  box-shadow: 0 2px 4px oklch(0% 0 0 / 10%);
+  font-size: 10px;
+  font-weight: 500;
+  box-shadow: 0 1px 3px oklch(0% 0 0 / 8%);
 }
 
 .mind-map-node.todo .mind-map-todo-indicator {
@@ -227,18 +226,18 @@
 /* Priority badge */
 .mind-map-priority-badge {
   position: absolute;
-  top: -6px;
-  left: -6px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 4px;
-  border-radius: 10px;
+  top: -5px;
+  left: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  box-shadow: 0 2px 4px oklch(0% 0 0 / 15%);
+  font-size: 9px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px oklch(0% 0 0 / 12%);
 }
 
 .mind-map-priority-badge.priority-p0 {
@@ -264,20 +263,20 @@
 /* Link indicator */
 .mind-map-link-indicator {
   position: absolute;
-  bottom: -6px;
-  right: -6px;
-  width: 22px;
-  height: 22px;
+  bottom: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--color-base-100);
-  border: 2px solid var(--color-info);
+  border: 1px solid var(--color-info);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-info);
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 4px oklch(0% 0 0 / 10%);
+  box-shadow: 0 1px 3px oklch(0% 0 0 / 8%);
 }
 
 .mind-map-link-indicator:hover {
@@ -289,14 +288,14 @@
 /* Edges (SVG) */
 .mind-map-edge {
   stroke: var(--color-base-300);
-  stroke-width: 2;
+  stroke-width: 1.5;
   fill: none;
   transition: stroke 0.2s, stroke-width 0.2s;
 }
 
 .mind-map-edge-group.focused .mind-map-edge {
   stroke: var(--color-primary);
-  stroke-width: 2.5;
+  stroke-width: 2;
 }
 
 /* Edge labels */
@@ -390,13 +389,13 @@
   height: 100%;
   border: none;
   background: transparent;
-  font-weight: 500;
-  font-size: 13px;
+  font-weight: 400;
+  font-size: 12px;
   color: var(--color-base-content);
   outline: none;
   padding: 0;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.35;
   resize: none;
   font-family: inherit;
   overflow: hidden;
@@ -412,8 +411,8 @@
 
 .mind-map-node.editing {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 25%),
-              0 4px 16px oklch(0% 0 0 / 12%);
+  box-shadow: 0 0 0 2px oklch(from var(--color-primary) l c h / 25%),
+              0 2px 8px oklch(0% 0 0 / 8%);
 }
 
 /* Context Menu */

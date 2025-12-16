@@ -5,16 +5,16 @@ defmodule WorkTree.MindMaps.Layout do
   """
 
   @node_width 200
-  @min_node_height 44
-  @horizontal_gap 60
-  @vertical_gap 36
+  @min_node_height 32
+  @horizontal_gap 50
+  @vertical_gap 20
 
   # Layout calculation constants
-  # With 200px width and ~14px padding each side, we have ~172px text width
-  # At 13px font size, roughly 24 chars per line
-  @chars_per_line 24
-  @line_height 19
-  @vertical_padding 24
+  # With 200px width and ~10px padding each side, we have ~180px text width
+  # At 12px font size, roughly 26 chars per line
+  @chars_per_line 26
+  @line_height 16
+  @vertical_padding 16
 
   @doc """
   Calculates positions for all nodes in a tree.

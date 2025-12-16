@@ -69,7 +69,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     |> assign(:modal_action, nil)
     |> assign(:focused_node_id, new_node.id)
     |> assign(:editing_node_id, new_node.id)
-    |> push_event("scroll-to-node", %{id: new_node.id})
+    |> push_event("center-node", %{id: new_node.id})
   end
 
   defp apply_action(socket, :edit, %{"node_id" => node_id}) do
@@ -264,7 +264,12 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   end
 
   def handle_event("start_inline_edit", %{"id" => id}, socket) do
-    {:noreply, assign(socket, :editing_node_id, String.to_integer(id))}
+    node_id = String.to_integer(id)
+
+    {:noreply,
+     socket
+     |> assign(:editing_node_id, node_id)
+     |> push_event("center-node", %{id: node_id})}
   end
 
   def handle_event("blur_inline_edit", %{"value" => title} = params, socket) do
@@ -311,7 +316,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> reload_tree()
      |> assign(:focused_node_id, new_node.id)
      |> assign(:editing_node_id, new_node.id)
-     |> push_event("scroll-to-node", %{id: new_node.id})}
+     |> push_event("center-node", %{id: new_node.id})}
   end
 
   def handle_event("add_child_node", %{"parent-id" => parent_id}, socket) do
@@ -323,7 +328,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> reload_tree()
      |> assign(:focused_node_id, new_node.id)
      |> assign(:editing_node_id, new_node.id)
-     |> push_event("scroll-to-node", %{id: new_node.id})}
+     |> push_event("center-node", %{id: new_node.id})}
   end
 
   def handle_event("open_link_modal", %{"id" => id}, socket) do
@@ -559,7 +564,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> reload_tree()
      |> assign(:focused_node_id, new_node.id)
      |> assign(:editing_node_id, new_node.id)
-     |> push_event("scroll-to-node", %{id: new_node.id})}
+     |> push_event("center-node", %{id: new_node.id})}
   end
 
   def handle_info({:context_menu_action, :edit_node, node}, socket) do

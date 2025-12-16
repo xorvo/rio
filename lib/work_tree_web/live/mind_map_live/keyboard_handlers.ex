@@ -68,7 +68,8 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
      socket
      |> reload_fn.()
      |> assign(:focused_node_id, new_node.id)
-     |> assign(:editing_node_id, new_node.id)}
+     |> assign(:editing_node_id, new_node.id)
+     |> Phoenix.LiveView.push_event("center-node", %{id: new_node.id})}
   end
 
   # 'O' (Shift+o) to create new sibling node (no effect on root)
@@ -85,7 +86,8 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
        socket
        |> reload_fn.()
        |> assign(:focused_node_id, new_node.id)
-       |> assign(:editing_node_id, new_node.id)}
+       |> assign(:editing_node_id, new_node.id)
+       |> Phoenix.LiveView.push_event("center-node", %{id: new_node.id})}
     else
       {:noreply, socket}
     end
