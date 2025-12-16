@@ -44,7 +44,10 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:drag_target_id, nil)
      |> assign(:pending_move, nil)
      |> assign(:move_undo_info, nil)
-     |> assign(:move_undo_timer, nil)}
+     |> assign(:move_undo_timer, nil)
+     |> assign(:priority_picker_open, false)
+     |> assign(:link_input_open, false)
+     |> assign(:link_input_node, nil)}
   end
 
   defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)
@@ -153,30 +156,24 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     {:noreply, push_navigate(socket, to: ~p"/node/#{id}")}
   end
 
-  def handle_event("keydown", %{"key" => key} = params, socket) do
-    meta_key = params["metaKey"] || false
-    ctrl_key = params["ctrlKey"] || false
+  def handle_event("keydown", %{"key" => key}, socket) do
+    # Ignore keyboard shortcuts while any modal or input is active
+    modal_active = socket.assigns.editing_node_id ||
+                   socket.assigns.link_edit_node ||
+                   socket.assigns.selected_node ||
+                   socket.assigns.modal_action ||
+                   socket.assigns.search_open ||
+                   socket.assigns.priority_picker_open ||
+                   socket.assigns.link_input_open
 
-    # Handle Cmd+P / Ctrl+P to open search (works globally)
-    if key == "p" and (meta_key or ctrl_key) do
-      {:noreply, assign(socket, :search_open, true)}
+    if modal_active do
+      {:noreply, socket}
     else
-      # Ignore keyboard shortcuts while any modal or input is active
-      modal_active = socket.assigns.editing_node_id ||
-                     socket.assigns.link_edit_node ||
-                     socket.assigns.selected_node ||
-                     socket.assigns.modal_action ||
-                     socket.assigns.search_open
-
-      if modal_active do
-        {:noreply, socket}
-      else
-        KeyboardHandlers.handle_key(socket, key,
-          delete_fn: &DeletionHandlers.delete_node_with_undo/2,
-          batch_delete_fn: &DeletionHandlers.batch_delete_nodes/2,
-          reload_fn: &reload_tree/1
-        )
-      end
+      KeyboardHandlers.handle_key(socket, key,
+        delete_fn: &DeletionHandlers.delete_node_with_undo/2,
+        batch_delete_fn: &DeletionHandlers.batch_delete_nodes/2,
+        reload_fn: &reload_tree/1
+      )
     end
   end
 
@@ -249,6 +246,106 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_event("search_go_to_result", %{"index" => index}, socket), do: SearchHandlers.go_to_result(socket, index)
   def handle_event("search_select_index", %{"index" => index}, socket), do: SearchHandlers.select_index(socket, index)
   def handle_event("search_confirm", _, socket), do: SearchHandlers.confirm_selection(socket)
+
+  # Priority picker events
+  def handle_event("close_priority_picker", _, socket) do
+    {:noreply, assign(socket, :priority_picker_open, false)}
+  end
+
+  def handle_event("priority_picker_keydown", %{"key" => key}, socket) do
+    cond do
+      key == "Escape" ->
+        {:noreply, assign(socket, :priority_picker_open, false)}
+
+      key in ["0", "1", "2", "3"] ->
+        priority = String.to_integer(key)
+        apply_priority(socket, priority)
+
+      key in ["x", "X", "Backspace"] ->
+        apply_priority(socket, nil)
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("priority_picker_select", %{"priority" => "clear"}, socket) do
+    apply_priority(socket, nil)
+  end
+
+  def handle_event("priority_picker_select", %{"priority" => priority}, socket) do
+    priority = String.to_integer(priority)
+    apply_priority(socket, priority)
+  end
+
+  defp apply_priority(socket, priority) do
+    selected_ids = socket.assigns.selected_node_ids
+
+    if MapSet.size(selected_ids) > 0 do
+      # Batch mode
+      Enum.each(selected_ids, fn id ->
+        node = MindMaps.get_node!(id)
+        MindMaps.update_node(node, %{priority: priority})
+      end)
+
+      {:noreply,
+       socket
+       |> assign(:priority_picker_open, false)
+       |> assign(:selected_node_ids, MapSet.new())
+       |> reload_tree()}
+    else
+      # Single node mode
+      node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
+
+      if node do
+        {:ok, _} = MindMaps.update_node(node, %{priority: priority})
+
+        {:noreply,
+         socket
+         |> assign(:priority_picker_open, false)
+         |> reload_tree()}
+      else
+        {:noreply, assign(socket, :priority_picker_open, false)}
+      end
+    end
+  end
+
+  # Link input events (quick inline link editor)
+  def handle_event("close_link_input", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:link_input_open, false)
+     |> assign(:link_input_node, nil)}
+  end
+
+  def handle_event("save_link_input", %{"link" => link}, socket) do
+    node = socket.assigns.link_input_node
+    link = String.trim(link)
+    link_value = if link == "", do: nil, else: link
+
+    case MindMaps.update_node(node, %{link: link_value}) do
+      {:ok, _updated_node} ->
+        {:noreply,
+         socket
+         |> assign(:link_input_open, false)
+         |> assign(:link_input_node, nil)
+         |> reload_tree()}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Invalid URL")}
+    end
+  end
+
+  def handle_event("link_input_keydown", %{"key" => "Escape"}, socket) do
+    {:noreply,
+     socket
+     |> assign(:link_input_open, false)
+     |> assign(:link_input_node, nil)}
+  end
+
+  def handle_event("link_input_keydown", _, socket) do
+    {:noreply, socket}
+  end
 
   @impl true
   def handle_info({WorkTreeWeb.MindMapLive.NodeFormComponent, {:saved, _node}}, socket) do

@@ -57,6 +57,10 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
               <span class="hints-desc">toggle todo</span>
             </div>
             <div class="hints-row">
+              <span class="kbd kbd-xs">p</span>
+              <span class="hints-desc">set priority</span>
+            </div>
+            <div class="hints-row">
               <span class="kbd kbd-xs">a</span>
               <span class="hints-desc">attach link</span>
             </div>

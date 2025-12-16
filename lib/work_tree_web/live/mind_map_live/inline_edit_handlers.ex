@@ -60,7 +60,7 @@ defmodule WorkTreeWeb.MindMapLive.InlineEditHandlers do
   Starts inline editing for a node.
   """
   def start_inline_edit(socket, %{"id" => id}) do
-    node_id = String.to_integer(id)
+    node_id = if is_binary(id), do: String.to_integer(id), else: id
 
     {:noreply,
      socket

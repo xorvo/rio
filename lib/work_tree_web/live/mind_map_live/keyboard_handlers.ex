@@ -149,10 +149,14 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
      |> Phoenix.LiveView.push_event("center-node", %{id: focused_id})}
   end
 
-  # 'a' to attach/edit link
+  # 'a' to attach/edit link (quick inline input)
   def handle_key(socket, "a", _opts) do
     node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
-    {:noreply, assign(socket, :link_edit_node, node)}
+
+    {:noreply,
+     socket
+     |> assign(:link_input_open, true)
+     |> assign(:link_input_node, node)}
   end
 
   # 'g' to go to (open) link - handled via JS hook reading data-node-link attribute
@@ -169,6 +173,11 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   # 'T' (Shift+t) to open search
   def handle_key(socket, "T", _opts) do
     {:noreply, assign(socket, :search_open, true)}
+  end
+
+  # 'p' to open priority picker
+  def handle_key(socket, "p", _opts) do
+    {:noreply, assign(socket, :priority_picker_open, true)}
   end
 
   # Ignore tab

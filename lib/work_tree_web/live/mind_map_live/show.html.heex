@@ -282,3 +282,17 @@
   global_search_results={@global_search_results}
   search_selected_index={@search_selected_index}
 />
+
+<%!-- Priority picker (quick select) --%>
+<% focused_node = Enum.find(@nodes, &(&1.id == @focused_node_id)) %>
+<WorkTreeWeb.Components.PriorityPickerComponent.priority_picker
+  priority_picker_open={@priority_picker_open}
+  focused_node={focused_node}
+  selected_node_ids={@selected_node_ids}
+/>
+
+<%!-- Link input (quick inline) --%>
+<WorkTreeWeb.Components.LinkInputComponent.link_input
+  link_input_open={@link_input_open}
+  link_input_node={@link_input_node}
+/>
