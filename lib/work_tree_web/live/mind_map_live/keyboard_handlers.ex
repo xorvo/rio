@@ -139,6 +139,16 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
     end
   end
 
+  # 'i' to start inline editing on focused node
+  def handle_key(socket, "i", _opts) do
+    focused_id = socket.assigns.focused_node_id
+
+    {:noreply,
+     socket
+     |> assign(:editing_node_id, focused_id)
+     |> Phoenix.LiveView.push_event("center-node", %{id: focused_id})}
+  end
+
   # 'a' to attach/edit link
   def handle_key(socket, "a", _opts) do
     node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
