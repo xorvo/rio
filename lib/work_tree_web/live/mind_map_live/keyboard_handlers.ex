@@ -17,6 +17,7 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   # Vim navigation keys
   def handle_key(socket, "h", _opts), do: {:noreply, Navigation.navigate_to(socket, :parent)}
   def handle_key(socket, "l", _opts), do: {:noreply, Navigation.navigate_to(socket, :child)}
+  def handle_key(socket, "L", _opts), do: {:noreply, Navigation.navigate_to(socket, :child)}
   def handle_key(socket, "j", _opts), do: {:noreply, Navigation.navigate_to(socket, :next_sibling)}
   def handle_key(socket, "k", _opts), do: {:noreply, Navigation.navigate_to(socket, :prev_sibling)}
 
@@ -117,6 +118,22 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
       {:noreply, push_navigate(socket, to: "/node/#{focused_id}")}
     else
       {:noreply, socket}
+    end
+  end
+
+  # 'H' (Shift+h) - on root node: jump up one level; otherwise: same as 'h' (navigate to parent)
+  def handle_key(socket, "H", _opts) do
+    focused_id = socket.assigns.focused_node_id
+    root_id = socket.assigns.root.id
+    ancestors = socket.assigns.ancestors
+
+    if focused_id == root_id and ancestors != [] do
+      # Navigate to the parent node view (one level up)
+      parent = List.last(ancestors)
+      {:noreply, push_navigate(socket, to: "/node/#{parent.id}")}
+    else
+      # Same as lowercase 'h' - navigate to parent within tree
+      {:noreply, Navigation.navigate_to(socket, :parent)}
     end
   end
 
