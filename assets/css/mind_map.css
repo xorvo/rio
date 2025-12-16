@@ -287,7 +287,7 @@
 
 /* Edges (SVG) */
 .mind-map-edge {
-  stroke: var(--color-base-300);
+  stroke: oklch(from var(--color-base-content) l c h / 30%);
   stroke-width: 1.5;
   fill: none;
   transition: stroke 0.2s, stroke-width 0.2s;
