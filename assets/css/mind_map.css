@@ -692,15 +692,48 @@
    Drag and Drop Styles
    ============================================ */
 
-/* Node being dragged - source node becomes faded */
+/* Node being dragged - source node and its descendants become faded */
 .mind-map-node.dragging {
   opacity: 0.4;
   pointer-events: none;
 }
 
-/* Ghost element - cloned node that follows cursor during drag */
+/* Subtree ghost container - holds all nodes and edges */
+.mind-map-subtree-ghost {
+  opacity: 0.85;
+  filter: drop-shadow(0 8px 24px oklch(0% 0 0 / 25%));
+}
+
+/* Individual nodes within the subtree ghost */
+.mind-map-ghost-node {
+  position: absolute;
+  background: var(--color-base-100);
+  border: 2px dashed var(--color-primary);
+  border-radius: var(--radius-box);
+  padding: 6px 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* The root node of the dragged subtree gets extra emphasis */
+.mind-map-subtree-ghost > .mind-map-ghost-node:first-of-type {
+  border-width: 2px;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px oklch(from var(--color-primary) l c h / 30%);
+}
+
+/* Edges within the ghost subtree */
+.mind-map-ghost-edge {
+  stroke: oklch(from var(--color-primary) l c h / 50%);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 2;
+  fill: none;
+}
+
+/* Legacy: Ghost element for single node (fallback) */
 .mind-map-node-ghost {
-  /* Inherit base node styling */
   background: var(--color-base-100);
   border: 2px dashed var(--color-primary);
   border-radius: var(--radius-box);
@@ -708,14 +741,13 @@
   opacity: 0.9;
   pointer-events: none;
   z-index: 1000;
-  /* Layout matches original node */
   display: flex;
   align-items: center;
   padding: 6px 10px;
   box-sizing: border-box;
 }
 
-/* Subtree count badge on ghost */
+/* Subtree count badge on ghost (legacy, kept for fallback) */
 .drag-subtree-badge {
   position: absolute;
   top: -10px;

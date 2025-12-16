@@ -311,8 +311,17 @@ const Hooks = {
     startDrag(e) {
       this.isDragging = true
 
-      // Add dragging class to source node
+      // Add dragging class to source node and all descendants
       this.el.classList.add("dragging")
+      const canvas = document.getElementById("mind-map-canvas")
+      if (canvas) {
+        for (const descendantId of this.descendantIds) {
+          const descendantEl = canvas.querySelector(`#node-${descendantId}`)
+          if (descendantEl) {
+            descendantEl.classList.add("dragging")
+          }
+        }
+      }
 
       // Add global dragging class to body
       document.body.classList.add("dragging-node")
@@ -325,58 +334,185 @@ const Hooks = {
     },
 
     createGhost(e) {
-      // Get visual bounding rect (already includes canvas zoom)
-      const rect = this.el.getBoundingClientRect()
+      const canvas = document.getElementById("mind-map-canvas")
+      if (!canvas) return
 
       // Get the current canvas zoom level
       const container = document.getElementById("mind-map-container")
       const canvasZoom = container?.__liveViewHook?.zoom || 1
 
-      // Clone the actual node for perfect visual match
-      this.ghostElement = this.el.cloneNode(true)
+      // Get the dragged node's position (in canvas coordinates, unzoomed)
+      const draggedX = parseFloat(this.el.style.left) || 0
+      const draggedY = parseFloat(this.el.style.top) || 0
 
-      // Remove any IDs to avoid duplicates
-      this.ghostElement.removeAttribute("id")
-      this.ghostElement.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"))
+      // Collect all nodes in the subtree (dragged node + descendants)
+      const subtreeNodeIds = [this.nodeId, ...this.descendantIds]
+      const subtreeNodes = []
 
-      // Remove hooks and event-related attributes
-      this.ghostElement.removeAttribute("phx-hook")
-      this.ghostElement.querySelectorAll("[phx-hook]").forEach(el => el.removeAttribute("phx-hook"))
-
-      // The cloned node has original (unzoomed) dimensions in its inline style
-      // We need to keep those and use transform to scale it to match the visual size
-      // rect.width/height are the visual (zoomed) dimensions we want to match
-      this.ghostElement.className = "mind-map-node-ghost"
-
-      // Clear inline positioning but keep width/height from original
-      const originalWidth = parseFloat(this.el.style.width) || rect.width / canvasZoom
-      const originalHeight = parseFloat(this.el.style.height) || rect.height / canvasZoom
-
-      this.ghostElement.style.cssText = ""
-      this.ghostElement.style.position = "fixed"
-      this.ghostElement.style.width = `${originalWidth}px`
-      this.ghostElement.style.height = `${originalHeight}px`
-
-      // Scale down to match visual size, plus slight extra scale-down and rotation for effect
-      const visualScale = canvasZoom * 0.95
-      this.ghostElement.style.transform = `scale(${visualScale}) rotate(2deg)`
-      this.ghostElement.style.transformOrigin = "top left"
-
-      // Add subtree badge if there are descendants
-      if (this.subtreeCount > 0) {
-        const badge = document.createElement("div")
-        badge.className = "drag-subtree-badge"
-        badge.textContent = `+${this.subtreeCount} node${this.subtreeCount > 1 ? "s" : ""}`
-        this.ghostElement.appendChild(badge)
+      for (const id of subtreeNodeIds) {
+        const nodeEl = canvas.querySelector(`#node-${id}`)
+        if (nodeEl) {
+          subtreeNodes.push({
+            id,
+            el: nodeEl,
+            x: parseFloat(nodeEl.style.left) || 0,
+            y: parseFloat(nodeEl.style.top) || 0,
+            width: parseFloat(nodeEl.style.width) || 200,
+            height: parseFloat(nodeEl.style.height) || 44
+          })
+        }
       }
 
-      // Calculate offset from cursor to top-left of node (in visual/screen coords)
-      this.ghostOffsetX = e.clientX - rect.left
-      this.ghostOffsetY = e.clientY - rect.top
+      // Calculate bounding box of the subtree (in canvas coords)
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      for (const node of subtreeNodes) {
+        minX = Math.min(minX, node.x)
+        minY = Math.min(minY, node.y)
+        maxX = Math.max(maxX, node.x + node.width)
+        maxY = Math.max(maxY, node.y + node.height)
+      }
 
-      // Position ghost at the node's visual position
-      this.ghostElement.style.left = `${rect.left}px`
-      this.ghostElement.style.top = `${rect.top}px`
+      const subtreeWidth = maxX - minX
+      const subtreeHeight = maxY - minY
+
+      // Create ghost container
+      this.ghostElement = document.createElement("div")
+      this.ghostElement.className = "mind-map-subtree-ghost"
+      this.ghostElement.style.position = "fixed"
+      this.ghostElement.style.width = `${subtreeWidth}px`
+      this.ghostElement.style.height = `${subtreeHeight}px`
+      this.ghostElement.style.pointerEvents = "none"
+      this.ghostElement.style.zIndex = "1000"
+
+      // Scale to match visual size with slight reduction
+      const visualScale = canvasZoom * 0.9
+      this.ghostElement.style.transform = `scale(${visualScale}) rotate(1deg)`
+      this.ghostElement.style.transformOrigin = "top left"
+
+      // Collect edges that connect nodes within the subtree
+      const subtreeIdSet = new Set(subtreeNodeIds)
+      const svgLayer = canvas.querySelector(".mind-map-svg")
+      const subtreeEdges = []
+
+      if (svgLayer) {
+        const edgeGroups = svgLayer.querySelectorAll(".mind-map-edge-group")
+        edgeGroups.forEach(group => {
+          const path = group.querySelector("path")
+          if (!path) return
+
+          // Parse path to get source/target - we'll use the path data directly
+          // Edges connect parent to child, so we need edges where both ends are in subtree
+          // We can identify edges by checking node positions against edge endpoints
+
+          // Get the path's d attribute which contains coordinates
+          const d = path.getAttribute("d")
+          if (!d) return
+
+          // Parse bezier curve: M sx sy C cx1 cy1, cx2 cy2, ex ey
+          const match = d.match(/M\s*([\d.-]+)\s+([\d.-]+)\s*C\s*([\d.-]+)\s+([\d.-]+)[,\s]+([\d.-]+)\s+([\d.-]+)[,\s]+([\d.-]+)\s+([\d.-]+)/)
+          if (!match) return
+
+          const [, sx, sy, , , , , ex, ey] = match.map(Number)
+
+          // Check if this edge connects two nodes in our subtree
+          // by checking if start and end points are near any subtree nodes
+          let sourceInSubtree = false
+          let targetInSubtree = false
+
+          for (const node of subtreeNodes) {
+            // Check if start point is near this node (likely the right edge)
+            if (Math.abs(sx - (node.x + node.width)) < 20 &&
+                sy >= node.y && sy <= node.y + node.height) {
+              sourceInSubtree = true
+            }
+            // Check if end point is near this node (likely the left edge)
+            if (Math.abs(ex - node.x) < 20 &&
+                ey >= node.y && ey <= node.y + node.height) {
+              targetInSubtree = true
+            }
+          }
+
+          if (sourceInSubtree && targetInSubtree) {
+            subtreeEdges.push({ path: d, element: path })
+          }
+        })
+      }
+
+      // Create SVG for edges
+      if (subtreeEdges.length > 0) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+        svg.setAttribute("class", "mind-map-ghost-svg")
+        svg.style.position = "absolute"
+        svg.style.left = "0"
+        svg.style.top = "0"
+        svg.style.width = `${subtreeWidth}px`
+        svg.style.height = `${subtreeHeight}px`
+        svg.style.overflow = "visible"
+        svg.style.pointerEvents = "none"
+
+        for (const edge of subtreeEdges) {
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path")
+
+          // Translate the path coordinates relative to subtree bounding box
+          const translatedD = edge.path.replace(
+            /M\s*([\d.-]+)\s+([\d.-]+)\s*C\s*([\d.-]+)\s+([\d.-]+)[,\s]+([\d.-]+)\s+([\d.-]+)[,\s]+([\d.-]+)\s+([\d.-]+)/,
+            (match, sx, sy, cx1, cy1, cx2, cy2, ex, ey) => {
+              const nsx = parseFloat(sx) - minX
+              const nsy = parseFloat(sy) - minY
+              const ncx1 = parseFloat(cx1) - minX
+              const ncy1 = parseFloat(cy1) - minY
+              const ncx2 = parseFloat(cx2) - minX
+              const ncy2 = parseFloat(cy2) - minY
+              const nex = parseFloat(ex) - minX
+              const ney = parseFloat(ey) - minY
+              return `M ${nsx} ${nsy} C ${ncx1} ${ncy1}, ${ncx2} ${ncy2}, ${nex} ${ney}`
+            }
+          )
+
+          path.setAttribute("d", translatedD)
+          path.setAttribute("class", "mind-map-ghost-edge")
+          svg.appendChild(path)
+        }
+
+        this.ghostElement.appendChild(svg)
+      }
+
+      // Clone each node and position relative to bounding box
+      for (const node of subtreeNodes) {
+        const clonedNode = node.el.cloneNode(true)
+
+        // Remove IDs and hooks
+        clonedNode.removeAttribute("id")
+        clonedNode.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"))
+        clonedNode.removeAttribute("phx-hook")
+        clonedNode.querySelectorAll("[phx-hook]").forEach(el => el.removeAttribute("phx-hook"))
+
+        // Add ghost styling class
+        clonedNode.classList.add("mind-map-ghost-node")
+        clonedNode.classList.remove("focused", "selected", "multi-selected", "dragging")
+
+        // Position relative to subtree bounding box
+        clonedNode.style.left = `${node.x - minX}px`
+        clonedNode.style.top = `${node.y - minY}px`
+
+        this.ghostElement.appendChild(clonedNode)
+      }
+
+      // Calculate cursor offset relative to the dragged node within the ghost
+      const draggedRect = this.el.getBoundingClientRect()
+      const cursorOffsetInNodeX = e.clientX - draggedRect.left
+      const cursorOffsetInNodeY = e.clientY - draggedRect.top
+
+      // Offset from ghost top-left to cursor position
+      // Ghost top-left is at minX, minY in canvas coords
+      // Dragged node is at draggedX, draggedY
+      // So dragged node offset within ghost is (draggedX - minX, draggedY - minY)
+      this.ghostOffsetX = ((draggedX - minX) * canvasZoom + cursorOffsetInNodeX) * 0.9
+      this.ghostOffsetY = ((draggedY - minY) * canvasZoom + cursorOffsetInNodeY) * 0.9
+
+      // Position ghost so dragged node appears under cursor
+      this.ghostElement.style.left = `${e.clientX - this.ghostOffsetX}px`
+      this.ghostElement.style.top = `${e.clientY - this.ghostOffsetY}px`
 
       document.body.appendChild(this.ghostElement)
     },
@@ -514,8 +650,17 @@ const Hooks = {
       // Remove drag state
       this.isDragging = false
 
-      // Remove dragging class from source node
+      // Remove dragging class from source node and all descendants
       this.el.classList.remove("dragging")
+      const canvas = document.getElementById("mind-map-canvas")
+      if (canvas) {
+        for (const descendantId of this.descendantIds) {
+          const descendantEl = canvas.querySelector(`#node-${descendantId}`)
+          if (descendantEl) {
+            descendantEl.classList.remove("dragging")
+          }
+        }
+      }
 
       // Remove global dragging class
       document.body.classList.remove("dragging-node")
