@@ -7,6 +7,8 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
   """
   use WorkTreeWeb, :live_component
 
+  alias WorkTreeWeb.MindMapLive.Helpers
+
   @priority_levels [
     {0, "P0 - Critical", "bg-error text-error-content"},
     {1, "P1 - High", "bg-warning text-warning-content"},
@@ -470,10 +472,6 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
     {:noreply, socket}
   end
 
-  # Helper to get priority color class
-  defp priority_color(0), do: "bg-error text-error-content"
-  defp priority_color(1), do: "bg-warning text-warning-content"
-  defp priority_color(2), do: "bg-info text-info-content"
-  defp priority_color(3), do: "bg-success text-success-content"
-  defp priority_color(_), do: "bg-base-300"
+  # Delegate to shared Helpers module
+  defp priority_color(priority), do: Helpers.priority_class(priority, :bg)
 end

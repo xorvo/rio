@@ -5,6 +5,8 @@ defmodule WorkTreeWeb.Components.NodeDetailComponent do
   """
   use WorkTreeWeb, :live_component
 
+  alias WorkTreeWeb.MindMapLive.Helpers
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -131,16 +133,7 @@ defmodule WorkTreeWeb.Components.NodeDetailComponent do
     """
   end
 
-  # Helper to get priority badge color class
-  defp priority_badge_color(0), do: "badge-error"
-  defp priority_badge_color(1), do: "badge-warning"
-  defp priority_badge_color(2), do: "badge-info"
-  defp priority_badge_color(3), do: "badge-success"
-  defp priority_badge_color(_), do: ""
-
-  # Helper to format date for display
-  defp format_date(nil), do: "—"
-  defp format_date(datetime) do
-    Calendar.strftime(datetime, "%b %d, %Y")
-  end
+  # Delegate to shared Helpers module
+  defp priority_badge_color(priority), do: Helpers.priority_class(priority, :badge)
+  defp format_date(datetime), do: Helpers.format_date(datetime)
 end
