@@ -154,6 +154,12 @@ const Hooks = {
       if (this.input && document.activeElement !== this.input) {
         this.input.focus()
       }
+
+      // Scroll selected item into view
+      const selected = this.el.querySelector(".search-result-item.selected")
+      if (selected) {
+        selected.scrollIntoView({ behavior: "smooth", block: "nearest" })
+      }
     },
 
     destroyed() {
