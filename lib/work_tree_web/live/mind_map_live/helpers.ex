@@ -40,6 +40,50 @@ defmodule WorkTreeWeb.MindMapLive.Helpers do
   def priority_class(3, :bg), do: "bg-success text-success-content"
   def priority_class(_, :bg), do: "bg-base-300"
 
+  # Due date helpers
+
+  @doc """
+  Calculates the number of days remaining until a due date.
+  Returns negative number if overdue.
+  """
+  def days_remaining(nil), do: nil
+
+  def days_remaining(due_date) when is_struct(due_date, Date) do
+    Date.diff(due_date, Date.utc_today())
+  end
+
+  @doc """
+  Returns CSS class for due date badge based on urgency.
+  """
+  def due_date_class(nil), do: ""
+
+  def due_date_class(due_date) when is_struct(due_date, Date) do
+    days = days_remaining(due_date)
+    due_date_class_from_days(days)
+  end
+
+  def due_date_class_from_days(nil), do: ""
+  def due_date_class_from_days(days) when days < 0, do: "due-overdue"
+  def due_date_class_from_days(0), do: "due-today"
+  def due_date_class_from_days(days) when days <= 3, do: "due-soon"
+  def due_date_class_from_days(days) when days <= 7, do: "due-week"
+  def due_date_class_from_days(_days), do: "due-later"
+
+  @doc """
+  Formats the due date badge label showing days remaining.
+  """
+  def format_due_date_badge(nil), do: ""
+
+  def format_due_date_badge(due_date) when is_struct(due_date, Date) do
+    days = days_remaining(due_date)
+
+    cond do
+      days < 0 -> "#{days}d"
+      days == 0 -> "0d"
+      true -> "#{days}d"
+    end
+  end
+
   @doc """
   Formats a datetime for display.
   """

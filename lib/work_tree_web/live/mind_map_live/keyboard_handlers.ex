@@ -180,6 +180,11 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
     {:noreply, assign(socket, :priority_picker_open, true)}
   end
 
+  # 'd' to open due date picker
+  def handle_key(socket, "d", _opts) do
+    {:noreply, assign(socket, :due_date_picker_open, true)}
+  end
+
   # Ignore tab
   def handle_key(socket, "Tab", _opts), do: {:noreply, socket}
 

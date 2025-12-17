@@ -46,6 +46,8 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:move_undo_info, nil)
      |> assign(:move_undo_timer, nil)
      |> assign(:priority_picker_open, false)
+     |> assign(:due_date_picker_open, false)
+     |> assign(:due_date_custom_mode, false)
      |> assign(:link_input_open, false)
      |> assign(:link_input_node, nil)}
   end
@@ -164,6 +166,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
                    socket.assigns.modal_action ||
                    socket.assigns.search_open ||
                    socket.assigns.priority_picker_open ||
+                   socket.assigns.due_date_picker_open ||
                    socket.assigns.link_input_open
 
     if modal_active do
@@ -306,6 +309,118 @@ defmodule WorkTreeWeb.MindMapLive.Show do
          |> reload_tree()}
       else
         {:noreply, assign(socket, :priority_picker_open, false)}
+      end
+    end
+  end
+
+  # Due date picker events
+  def handle_event("close_due_date_picker", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:due_date_picker_open, false)
+     |> assign(:due_date_custom_mode, false)}
+  end
+
+  def handle_event("due_date_picker_keydown", %{"key" => key}, socket) do
+    cond do
+      key == "Escape" ->
+        {:noreply,
+         socket
+         |> assign(:due_date_picker_open, false)
+         |> assign(:due_date_custom_mode, false)}
+
+      key in ["1", "2", "3", "4", "5"] ->
+        apply_due_date_option(socket, String.to_integer(key))
+
+      key == "6" ->
+        # Switch to custom date mode
+        {:noreply, assign(socket, :due_date_custom_mode, true)}
+
+      key in ["x", "X", "Backspace"] ->
+        apply_due_date(socket, nil)
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("due_date_picker_select", %{"option" => "clear"}, socket) do
+    apply_due_date(socket, nil)
+  end
+
+  def handle_event("due_date_picker_select", %{"option" => "6"}, socket) do
+    {:noreply, assign(socket, :due_date_custom_mode, true)}
+  end
+
+  def handle_event("due_date_picker_select", %{"option" => option}, socket) do
+    apply_due_date_option(socket, String.to_integer(option))
+  end
+
+  def handle_event("due_date_custom_submit", %{"custom_date" => date_str}, socket) do
+    case Date.from_iso8601(date_str) do
+      {:ok, date} ->
+        apply_due_date(socket, date)
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Invalid date")}
+    end
+  end
+
+  def handle_event("due_date_cancel_custom", _, socket) do
+    {:noreply, assign(socket, :due_date_custom_mode, false)}
+  end
+
+  defp apply_due_date_option(socket, option) do
+    due_date = calculate_due_date(option)
+    apply_due_date(socket, due_date)
+  end
+
+  defp calculate_due_date(option) do
+    today = Date.utc_today()
+
+    case option do
+      1 -> today
+      2 -> Date.add(today, 7)
+      3 -> Date.add(today, 14)
+      4 -> Date.add(today, 30)
+      5 -> Date.add(today, 60)
+      _ -> nil
+    end
+  end
+
+  defp apply_due_date(socket, due_date) do
+    selected_ids = socket.assigns.selected_node_ids
+
+    if MapSet.size(selected_ids) > 0 do
+      # Batch mode
+      Enum.each(selected_ids, fn id ->
+        node = MindMaps.get_node!(id)
+        MindMaps.update_node(node, %{due_date: due_date})
+      end)
+
+      {:noreply,
+       socket
+       |> assign(:due_date_picker_open, false)
+       |> assign(:due_date_custom_mode, false)
+       |> assign(:selected_node_ids, MapSet.new())
+       |> reload_tree()}
+    else
+      # Single node mode
+      node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
+
+      if node do
+        {:ok, _} = MindMaps.update_node(node, %{due_date: due_date})
+
+        {:noreply,
+         socket
+         |> assign(:due_date_picker_open, false)
+         |> assign(:due_date_custom_mode, false)
+         |> reload_tree()}
+      else
+        {:noreply,
+         socket
+         |> assign(:due_date_picker_open, false)
+         |> assign(:due_date_custom_mode, false)}
       end
     end
   end
@@ -561,6 +676,8 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   # Delegate helper functions to Helpers module
   defp edge_path(edge), do: Helpers.edge_path(edge)
   defp priority_color(priority), do: Helpers.priority_class(priority, :css)
+  defp due_date_class(due_date), do: Helpers.due_date_class(due_date)
+  defp format_due_date_badge(due_date), do: Helpers.format_due_date_badge(due_date)
   defp node_children_count(node, nodes), do: Helpers.node_children_count(node, nodes)
   defp get_subtree_count(node, nodes), do: Helpers.get_subtree_count(node, nodes)
   defp get_descendant_ids(node, nodes), do: Helpers.get_descendant_ids(node, nodes)

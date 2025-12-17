@@ -128,6 +128,17 @@
         >
           P{node.priority}
         </div>
+        <div
+          :if={node.due_date != nil}
+          class={[
+            "mind-map-due-date-badge",
+            due_date_class(node.due_date),
+            node.priority != nil && "has-priority"
+          ]}
+          title={Calendar.strftime(node.due_date, "%b %d, %Y")}
+        >
+          {format_due_date_badge(node.due_date)}
+        </div>
         <a
           :if={node.link}
           href={node.link}
@@ -289,6 +300,14 @@
   priority_picker_open={@priority_picker_open}
   focused_node={focused_node}
   selected_node_ids={@selected_node_ids}
+/>
+
+<%!-- Due date picker (quick select) --%>
+<WorkTreeWeb.Components.DueDatePickerComponent.due_date_picker
+  due_date_picker_open={@due_date_picker_open}
+  focused_node={focused_node}
+  selected_node_ids={@selected_node_ids}
+  custom_date_mode={@due_date_custom_mode}
 />
 
 <%!-- Link input (quick inline) --%>
