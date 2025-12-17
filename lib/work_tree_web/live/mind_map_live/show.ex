@@ -3,7 +3,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   alias WorkTree.MindMaps
   alias WorkTree.MindMaps.Layout
-  alias WorkTreeWeb.MindMapLive.{Navigation, KeyboardHandlers, Helpers, SearchHandlers, DeletionHandlers, InlineEditHandlers, LinkHandlers, DragHandlers}
+  alias WorkTreeWeb.MindMapLive.{Navigation, KeyboardHandlers, Helpers, SearchHandlers, DeletionHandlers, InlineEditHandlers, LinkHandlers, DragHandlers, TodoFilterHandlers}
 
   @impl true
   def mount(params, _session, socket) do
@@ -49,7 +49,12 @@ defmodule WorkTreeWeb.MindMapLive.Show do
      |> assign(:due_date_picker_open, false)
      |> assign(:due_date_custom_mode, false)
      |> assign(:link_input_open, false)
-     |> assign(:link_input_node, nil)}
+     |> assign(:link_input_node, nil)
+     |> assign(:todo_filter_open, false)
+     |> assign(:todo_filter_results, [])
+     |> assign(:todo_filter_selected_index, 0)
+     |> assign(:todo_filter_scope, :local)
+     |> assign(:todo_filter_show_completed, false)}
   end
 
   defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)
@@ -167,7 +172,8 @@ defmodule WorkTreeWeb.MindMapLive.Show do
                    socket.assigns.search_open ||
                    socket.assigns.priority_picker_open ||
                    socket.assigns.due_date_picker_open ||
-                   socket.assigns.link_input_open
+                   socket.assigns.link_input_open ||
+                   socket.assigns.todo_filter_open
 
     if modal_active do
       {:noreply, socket}
@@ -249,6 +255,19 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_event("search_go_to_result", %{"index" => index}, socket), do: SearchHandlers.go_to_result(socket, index)
   def handle_event("search_select_index", %{"index" => index}, socket), do: SearchHandlers.select_index(socket, index)
   def handle_event("search_confirm", _, socket), do: SearchHandlers.confirm_selection(socket)
+
+  # Todo filter events - delegate to TodoFilterHandlers
+  def handle_event("open_todo_filter", _, socket), do: TodoFilterHandlers.open_todo_filter(socket)
+  def handle_event("close_todo_filter", _, socket), do: TodoFilterHandlers.close_todo_filter(socket)
+  def handle_event("todo_filter_toggle_scope", _, socket), do: TodoFilterHandlers.toggle_scope(socket)
+  def handle_event("todo_filter_set_scope", %{"scope" => "local"}, socket), do: TodoFilterHandlers.set_scope(socket, :local)
+  def handle_event("todo_filter_set_scope", %{"scope" => "global"}, socket), do: TodoFilterHandlers.set_scope(socket, :global)
+  def handle_event("todo_filter_toggle_completed", _, socket), do: TodoFilterHandlers.toggle_show_completed(socket)
+  def handle_event("todo_filter_select_prev", _, socket), do: TodoFilterHandlers.select_prev(socket)
+  def handle_event("todo_filter_select_next", _, socket), do: TodoFilterHandlers.select_next(socket)
+  def handle_event("todo_filter_go_to_result", %{"index" => index}, socket), do: TodoFilterHandlers.go_to_result(socket, index)
+  def handle_event("todo_filter_select_index", %{"index" => index}, socket), do: TodoFilterHandlers.select_index(socket, index)
+  def handle_event("todo_filter_confirm", _, socket), do: TodoFilterHandlers.confirm_selection(socket)
 
   # Priority picker events
   def handle_event("close_priority_picker", _, socket) do

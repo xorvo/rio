@@ -565,12 +565,12 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: var(--radius-btn);
+  border-radius: 8px;
   border: none;
   background: transparent;
   text-align: left;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .search-result-item:hover,
@@ -589,12 +589,27 @@
 }
 
 .search-result-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 500;
   color: var(--color-base-content);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Checkbox within search result title */
+.search-result-title .todo-checkbox-indicator {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.search-result-title .todo-checkbox-indicator svg {
+  width: 10px;
+  height: 10px;
 }
 
 .search-result-todo {
@@ -686,6 +701,173 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* ============================================
+   Todo Filter Modal Styles
+   ============================================ */
+
+.todo-filter-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-base-300);
+}
+
+.todo-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-base-content);
+}
+
+.todo-filter-scope-toggle {
+  display: flex;
+  background: var(--color-base-200);
+  border-radius: var(--radius-btn);
+  padding: 2px;
+  margin-left: auto;
+}
+
+.todo-filter-scope-toggle .scope-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: oklch(from var(--color-base-content) l c h / 60%);
+  border-radius: calc(var(--radius-btn) - 2px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.todo-filter-scope-toggle .scope-btn:hover {
+  color: var(--color-base-content);
+}
+
+.todo-filter-scope-toggle .scope-btn.active {
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  box-shadow: 0 1px 3px oklch(0% 0 0 / 10%);
+}
+
+.todo-result-meta {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.todo-result-due-date {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.todo-result-due-date.due-overdue {
+  background: oklch(from var(--color-error) l c h / 15%);
+  color: var(--color-error);
+}
+
+.todo-result-due-date.due-today {
+  background: oklch(from var(--color-warning) l c h / 15%);
+  color: var(--color-warning);
+}
+
+.todo-result-due-date.due-soon {
+  background: oklch(from var(--color-info) l c h / 15%);
+  color: var(--color-info);
+}
+
+.todo-result-due-date.due-week {
+  background: oklch(from var(--color-base-content) l c h / 10%);
+  color: oklch(from var(--color-base-content) l c h / 70%);
+}
+
+.todo-result-due-date.due-later {
+  background: oklch(from var(--color-base-content) l c h / 5%);
+  color: oklch(from var(--color-base-content) l c h / 50%);
+}
+
+/* Shared todo checkbox indicator (used in search and todo filter) */
+.todo-checkbox-indicator {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-base-100);
+  border: 1px solid var(--color-warning);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-warning);
+  box-shadow: 0 1px 3px oklch(0% 0 0 / 8%);
+}
+
+.todo-checkbox-indicator.checked {
+  color: var(--color-success);
+  background: oklch(from var(--color-success) l c h / 15%);
+  border-color: var(--color-success);
+}
+
+/* Todo result item with checkbox */
+.todo-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Checkbox in todo filter items - slightly larger than search */
+.todo-result-item .todo-checkbox-indicator {
+  width: 18px;
+  height: 18px;
+}
+
+.todo-result-item .todo-checkbox-indicator svg {
+  width: 12px;
+  height: 12px;
+}
+
+.todo-result-item.completed .todo-result-title,
+.todo-result-title.completed {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.todo-filter-completed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: oklch(from var(--color-base-content) l c h / 60%);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-btn);
+  border: none;
+  background: transparent;
+}
+
+.todo-toggle-check {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid oklch(from var(--color-base-content) l c h / 40%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.todo-toggle-check.checked {
+  border-color: var(--color-success);
+  background: oklch(from var(--color-success) l c h / 15%);
+  color: var(--color-success);
 }
 
 /* ============================================

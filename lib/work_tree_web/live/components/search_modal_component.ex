@@ -6,6 +6,7 @@ defmodule WorkTreeWeb.Components.SearchModalComponent do
   use WorkTreeWeb, :html
 
   alias WorkTreeWeb.MindMapLive.Helpers
+  import WorkTreeWeb.Components.SharedComponents
 
   attr :search_open, :boolean, required: true
   attr :search_query, :string, required: true
@@ -124,17 +125,7 @@ defmodule WorkTreeWeb.Components.SearchModalComponent do
     >
       <div class="search-result-content">
         <div class="search-result-title">
-          <span :if={@node.is_todo} class="search-result-todo">
-            <%= if @node.todo_completed do %>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-            <% else %>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <circle cx="12" cy="12" r="9" stroke-width="2" />
-              </svg>
-            <% end %>
-          </span>
+          <.todo_checkbox :if={@node.is_todo} completed={@node.todo_completed} />
           <%= if @highlights.title != [] do %>
             {Helpers.highlight_text(@node.title, @highlights.title)}
           <% else %>

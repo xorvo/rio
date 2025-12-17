@@ -185,6 +185,11 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
     {:noreply, assign(socket, :due_date_picker_open, true)}
   end
 
+  # 'v' to open todo filter
+  def handle_key(socket, "v", _opts) do
+    WorkTreeWeb.MindMapLive.TodoFilterHandlers.open_todo_filter(socket)
+  end
+
   # Ignore tab
   def handle_key(socket, "Tab", _opts), do: {:noreply, socket}
 

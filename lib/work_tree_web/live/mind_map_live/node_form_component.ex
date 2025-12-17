@@ -80,9 +80,6 @@ defmodule WorkTreeWeb.MindMapLive.NodeFormComponent do
         </div>
 
         <div class="flex gap-3 justify-end pt-2 border-t border-base-300">
-          <button type="button" class="btn btn-ghost" phx-click={JS.exec("data-cancel", to: "#node-form")}>
-            Cancel
-          </button>
           <button type="submit" class="btn btn-primary" phx-disable-with="Saving...">
             Save Changes
           </button>

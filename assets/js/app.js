@@ -160,6 +160,77 @@ const Hooks = {
       this.el.removeEventListener("keydown", this.handleKeydown)
     }
   },
+  TodoFilterModal: {
+    mounted() {
+      // Stop any ongoing arrow pan animation in MindMapCanvas when modal opens
+      const container = document.getElementById("mind-map-container")
+      const canvasHook = container?.__liveViewHook
+      if (canvasHook) {
+        canvasHook.arrowKeysPressed?.clear()
+        if (canvasHook.arrowPanAnimationId) {
+          cancelAnimationFrame(canvasHook.arrowPanAnimationId)
+          canvasHook.arrowPanAnimationId = null
+        }
+        canvasHook.arrowPanSpeed = 0
+      }
+
+      // Handle keyboard navigation - use window with capture to intercept before MindMapCanvas
+      this.handleKeydown = (e) => {
+        if (e.key === "ArrowDown") {
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+          this.pushEvent("todo_filter_select_next", {})
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+          this.pushEvent("todo_filter_select_prev", {})
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+          // Block left/right arrows to prevent canvas panning
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+        } else if (e.key === "Enter") {
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+          this.pushEvent("todo_filter_confirm", {})
+        } else if (e.key === "Tab") {
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+          this.pushEvent("todo_filter_toggle_scope", {})
+        }
+      }
+
+      // Also intercept keyup for arrow keys to prevent MindMapCanvas from receiving mismatched keyup events
+      this.handleKeyup = (e) => {
+        if (["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+        }
+      }
+
+      // Use capture phase to intercept events before they reach MindMapCanvas
+      window.addEventListener("keydown", this.handleKeydown, true)
+      window.addEventListener("keyup", this.handleKeyup, true)
+    },
+
+    updated() {
+      // Scroll selected item into view smoothly
+      const selected = this.el.querySelector(".todo-result-item.selected")
+      if (selected) {
+        selected.scrollIntoView({ behavior: "smooth", block: "nearest" })
+      }
+    },
+
+    destroyed() {
+      window.removeEventListener("keydown", this.handleKeydown, true)
+      window.removeEventListener("keyup", this.handleKeyup, true)
+    }
+  },
   NodeDrag: {
     mounted() {
       this.nodeId = parseInt(this.el.dataset.nodeId)
@@ -716,6 +787,14 @@ const Hooks = {
       this.startPanX = 0
       this.startPanY = 0
 
+      // Arrow key panning state
+      this.arrowKeysPressed = new Set()
+      this.arrowPanSpeed = 0
+      this.arrowPanMinSpeed = 2
+      this.arrowPanMaxSpeed = 20
+      this.arrowPanAcceleration = 0.5
+      this.arrowPanAnimationId = null
+
       // Debounce timer for localStorage
       this.saveTimer = null
 
@@ -736,6 +815,7 @@ const Hooks = {
       this.handleMouseMove = this.handleMouseMove.bind(this)
       this.handleMouseUp = this.handleMouseUp.bind(this)
       this.handleKeyDown = this.handleKeyDown.bind(this)
+      this.handleKeyUp = this.handleKeyUp.bind(this)
 
       // Attach event listeners
       this.el.addEventListener("wheel", this.handleWheel, { passive: false })
@@ -743,6 +823,7 @@ const Hooks = {
       window.addEventListener("mousemove", this.handleMouseMove)
       window.addEventListener("mouseup", this.handleMouseUp)
       window.addEventListener("keydown", this.handleKeyDown)
+      window.addEventListener("keyup", this.handleKeyUp)
 
       // Listen for scroll-to-node events from LiveView
       this.handleEvent("scroll-to-node", ({ id }) => {
@@ -785,8 +866,10 @@ const Hooks = {
       window.removeEventListener("mousemove", this.handleMouseMove)
       window.removeEventListener("mouseup", this.handleMouseUp)
       window.removeEventListener("keydown", this.handleKeyDown)
+      window.removeEventListener("keyup", this.handleKeyUp)
       window.removeEventListener("keydown", this.handleCmdP)
       if (this.saveTimer) clearTimeout(this.saveTimer)
+      if (this.arrowPanAnimationId) cancelAnimationFrame(this.arrowPanAnimationId)
     },
 
     handleWheel(e) {
@@ -871,6 +954,13 @@ const Hooks = {
       // Check if target is an input/textarea (with safety check for non-element targets)
       const isInputTarget = e.target?.matches?.("input, textarea")
 
+      // Check if any modal is open (todo filter, search, etc.)
+      const isModalOpen = document.getElementById("todo-filter-modal") ||
+                          document.getElementById("search-modal") ||
+                          document.querySelector(".priority-picker") ||
+                          document.querySelector(".due-date-picker") ||
+                          document.querySelector(".link-input-modal")
+
       // Zoom shortcuts (only when not in input)
       if (!isInputTarget) {
         if (e.key === "=" || e.key === "+") {
@@ -882,8 +972,52 @@ const Hooks = {
         } else if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
           e.preventDefault()
           this.zoomTo(1.0)
+        } else if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key) && !isModalOpen) {
+          e.preventDefault()
+          if (!this.arrowKeysPressed.has(e.key)) {
+            this.arrowKeysPressed.add(e.key)
+            if (this.arrowKeysPressed.size === 1) {
+              this.arrowPanSpeed = this.arrowPanMinSpeed
+              this.startArrowPan()
+            }
+          }
         }
       }
+    },
+
+    handleKeyUp(e) {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+        this.arrowKeysPressed.delete(e.key)
+        if (this.arrowKeysPressed.size === 0) {
+          this.stopArrowPan()
+        }
+      }
+    },
+
+    startArrowPan() {
+      const animate = () => {
+        if (this.arrowKeysPressed.size === 0) return
+
+        this.arrowPanSpeed = Math.min(this.arrowPanMaxSpeed, this.arrowPanSpeed + this.arrowPanAcceleration)
+
+        if (this.arrowKeysPressed.has("ArrowLeft")) this.panX += this.arrowPanSpeed
+        if (this.arrowKeysPressed.has("ArrowRight")) this.panX -= this.arrowPanSpeed
+        if (this.arrowKeysPressed.has("ArrowUp")) this.panY += this.arrowPanSpeed
+        if (this.arrowKeysPressed.has("ArrowDown")) this.panY -= this.arrowPanSpeed
+
+        this.applyTransform()
+        this.arrowPanAnimationId = requestAnimationFrame(animate)
+      }
+      this.arrowPanAnimationId = requestAnimationFrame(animate)
+    },
+
+    stopArrowPan() {
+      if (this.arrowPanAnimationId) {
+        cancelAnimationFrame(this.arrowPanAnimationId)
+        this.arrowPanAnimationId = null
+      }
+      this.arrowPanSpeed = 0
+      this.saveViewportState()
     },
 
     zoomTo(newZoom) {
