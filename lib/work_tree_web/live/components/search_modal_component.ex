@@ -124,24 +124,11 @@ defmodule WorkTreeWeb.Components.SearchModalComponent do
       phx-mouseover={JS.push("search_select_index", value: %{index: @index})}
     >
       <div class="search-result-content">
-        <div class="search-result-title">
-          <.todo_checkbox :if={@node.is_todo} completed={@node.todo_completed} />
-          <%= if @highlights.title != [] do %>
-            {Helpers.highlight_text(@node.title, @highlights.title)}
-          <% else %>
-            {@node.title}
-          <% end %>
-        </div>
+        <div class="search-result-title"><.todo_checkbox :if={@node.is_todo} completed={@node.todo_completed} /><span class="search-result-title-text"><%= if @highlights.title != [] do %>{Helpers.highlight_text(@node.title, @highlights.title)}<% else %>{@node.title}<% end %></span></div>
         <div :if={@ancestry != []} class="search-result-ancestry">
           {Helpers.format_ancestry(@ancestry)}
         </div>
-        <div :if={@node.body["content"]} class="search-result-body">
-          <%= if @highlights.body != [] do %>
-            {Helpers.highlight_text(Helpers.truncate_body(@node.body["content"]), @highlights.body)}
-          <% else %>
-            {Helpers.truncate_body(@node.body["content"])}
-          <% end %>
-        </div>
+        <div :if={@node.body["content"]} class="search-result-body"><%= if @highlights.body != [] do %>{Helpers.highlight_text(Helpers.truncate_body(@node.body["content"]), @highlights.body)}<% else %>{Helpers.truncate_body(@node.body["content"])}<% end %></div>
       </div>
       <div class="search-result-meta">
         <span :if={@node.priority != nil} class={["search-result-priority", Helpers.priority_class(@node.priority, :css)]}>

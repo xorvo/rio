@@ -600,6 +600,11 @@
   text-overflow: ellipsis;
 }
 
+.search-result-title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Checkbox within search result title */
 .search-result-title .todo-checkbox-indicator {
   width: 16px;
