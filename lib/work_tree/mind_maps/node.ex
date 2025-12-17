@@ -21,6 +21,8 @@ defmodule WorkTree.MindMaps.Node do
     field :link, :string
     # Due date for the node
     field :due_date, :date
+    # Timestamp when todo was marked as completed
+    field :completed_at, :utc_datetime
     # Locked nodes cannot be deleted
     field :locked, :boolean, default: false
     # Soft delete fields
@@ -37,7 +39,7 @@ defmodule WorkTree.MindMaps.Node do
   @doc false
   def changeset(node, attrs) do
     node
-    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :locked])
+    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :completed_at, :locked])
     |> validate_required([:title, :path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)
@@ -49,7 +51,7 @@ defmodule WorkTree.MindMaps.Node do
   """
   def inline_changeset(node, attrs) do
     node
-    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :locked])
+    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :completed_at, :locked])
     |> validate_required([:path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)

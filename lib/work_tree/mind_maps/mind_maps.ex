@@ -279,9 +279,12 @@ defmodule WorkTree.MindMaps do
   Toggles the TODO completed state.
   """
   def toggle_todo(%Node{is_todo: true, todo_completed: completed} = node) do
+    # Set completed_at when marking as complete, clear it when uncompleting
+    completed_at = if completed, do: nil, else: DateTime.utc_now()
+
     result =
       node
-      |> Node.changeset(%{todo_completed: !completed})
+      |> Node.changeset(%{todo_completed: !completed, completed_at: completed_at})
       |> Repo.update()
 
     case result do

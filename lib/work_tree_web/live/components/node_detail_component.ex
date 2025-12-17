@@ -55,6 +55,11 @@ defmodule WorkTreeWeb.Components.NodeDetailComponent do
           </button>
           <span :if={!@node.is_todo} class="text-base-content/30">—</span>
         </div>
+        <%!-- Completed date --%>
+        <div :if={@node.is_todo && @node.completed_at} class="flex items-center gap-2">
+          <span class="text-base-content/50">Completed</span>
+          <span class="text-base-content/80">{format_date(@node.completed_at)}</span>
+        </div>
         <%!-- Children count --%>
         <div class="flex items-center gap-2">
           <span class="text-base-content/50">Children</span>
