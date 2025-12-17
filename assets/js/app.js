@@ -233,7 +233,7 @@ const Hooks = {
   },
   NodeDrag: {
     mounted() {
-      this.nodeId = parseInt(this.el.dataset.nodeId)
+      this.nodeId = this.el.dataset.nodeId
       this.isRoot = this.el.dataset.isRoot === "true"
       this.isLocked = this.el.dataset.locked === "true"
       this.subtreeCount = parseInt(this.el.dataset.subtreeCount || "0")
@@ -614,7 +614,7 @@ const Hooks = {
         if (clientX >= rect.left && clientX <= rect.right &&
             clientY >= rect.top && clientY <= rect.bottom) {
 
-          const targetId = parseInt(node.dataset.nodeId)
+          const targetId = node.dataset.nodeId
 
           if (this.isValidDropTarget(targetId, node)) {
             node.classList.add("drop-target")

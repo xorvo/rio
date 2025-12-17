@@ -1,7 +1,7 @@
 defmodule WorkTree.MindMaps.Tree do
   @moduledoc """
   Handles tree path operations for the mind map node hierarchy.
-  Uses materialized path pattern for efficient subtree queries.
+  Uses materialized path pattern with UUID arrays for efficient subtree queries.
   """
 
   import Ecto.Query
@@ -9,10 +9,10 @@ defmodule WorkTree.MindMaps.Tree do
 
   @doc """
   Builds the path for a new node given its parent and the node's own ID.
-  Root nodes (no parent) have path equal to their ID as string.
+  Root nodes have path as single-element array with their ID.
   """
-  def build_path(nil, node_id), do: "#{node_id}"
-  def build_path(%Node{path: parent_path}, node_id), do: "#{parent_path}.#{node_id}"
+  def build_path(nil, node_id), do: [node_id]
+  def build_path(%Node{path: parent_path}, node_id), do: parent_path ++ [node_id]
 
   @doc """
   Calculates depth based on parent.
@@ -22,14 +22,15 @@ defmodule WorkTree.MindMaps.Tree do
 
   @doc """
   Returns a query for all descendants of a node (subtree).
-  Uses LIKE query on materialized path.
+  Uses ANY operator on UUID array path.
   Excludes soft-deleted nodes by default.
   """
-  def descendants_query(%Node{path: path}, opts \\ []) do
-    pattern = "#{path}.%"
+  def descendants_query(%Node{id: id}, opts \\ []) do
     include_deleted = Keyword.get(opts, :include_deleted, false)
 
-    query = from(n in Node, where: like(n.path, ^pattern))
+    # Cast the id to uuid explicitly for the ANY() array comparison
+    query = from(n in Node,
+      where: type(^id, Ecto.UUID) == fragment("ANY(?)", n.path) and n.id != ^id)
 
     if include_deleted do
       query
@@ -40,15 +41,11 @@ defmodule WorkTree.MindMaps.Tree do
 
   @doc """
   Returns a query for all ancestors of a node.
-  Parses path and returns nodes with matching IDs.
+  Path is already a list of UUIDs, just drop the last element (self).
   Excludes soft-deleted nodes.
   """
   def ancestors_query(%Node{path: path}) do
-    ancestor_ids =
-      path
-      |> String.split(".")
-      |> Enum.drop(-1)
-      |> Enum.map(&String.to_integer/1)
+    ancestor_ids = Enum.drop(path, -1)
 
     from(n in Node, where: n.id in ^ancestor_ids and is_nil(n.deleted_at), order_by: n.depth)
   end
@@ -91,14 +88,17 @@ defmodule WorkTree.MindMaps.Tree do
   def rebuild_paths(node, new_parent, descendants) do
     new_path = build_path(new_parent, node.id)
     new_depth = calculate_depth(new_parent)
-    old_path_prefix = node.path
+    old_path = node.path
 
     updates = [{node.id, new_path, new_depth}]
 
     descendant_updates =
       Enum.map(descendants, fn desc ->
         # Replace old path prefix with new path prefix
-        desc_new_path = String.replace_prefix(desc.path, old_path_prefix, new_path)
+        # Old path was [a, b, c, node.id, ...], new path replaces [a, b, c, node.id] with new_path
+        old_path_length = length(old_path)
+        desc_suffix = Enum.drop(desc.path, old_path_length)
+        desc_new_path = new_path ++ desc_suffix
         depth_diff = new_depth - node.depth
         {desc.id, desc_new_path, desc.depth + depth_diff}
       end)

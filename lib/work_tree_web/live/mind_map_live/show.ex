@@ -93,7 +93,6 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   @impl true
   def handle_event("focus_node", %{"id" => id} = params, socket) do
-    id = String.to_integer(id)
     meta_key = params["metaKey"] || params["ctrlKey"] || false
 
     if meta_key do
@@ -120,7 +119,6 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   end
 
   def handle_event("open_node_detail", %{"id" => id}, socket) do
-    id = if is_binary(id), do: String.to_integer(id), else: id
     node = Enum.find(socket.assigns.nodes, &(&1.id == id))
 
     {:noreply,
@@ -233,7 +231,6 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   # Context menu events
   def handle_event("open_context_menu", %{"id" => id, "x" => x, "y" => y}, socket) do
-    id = if is_binary(id), do: String.to_integer(id), else: id
     node = Enum.find(socket.assigns.nodes, &(&1.id == id))
 
     {:noreply,

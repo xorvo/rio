@@ -80,13 +80,13 @@ defmodule WorkTree.MindMaps do
     attrs = stringify_keys(attrs)
 
     Repo.transaction(fn ->
-      # Insert with temporary path
+      # Insert with empty path (will be updated after we have the ID)
       {:ok, node} =
         %Node{}
-        |> Node.changeset(Map.merge(attrs, %{"path" => "temp", "position" => position, "depth" => 0}))
+        |> Node.changeset(Map.merge(attrs, %{"path" => [], "position" => position, "depth" => 0}))
         |> Repo.insert()
 
-      # Update with correct path
+      # Update with correct path (array containing just this node's ID)
       node
       |> Node.changeset(%{"path" => Tree.build_path(nil, node.id)})
       |> Repo.update!()
@@ -96,7 +96,7 @@ defmodule WorkTree.MindMaps do
   @doc """
   Creates a child node under a parent.
   """
-  def create_child_node(parent_id, attrs) when is_integer(parent_id) do
+  def create_child_node(parent_id, attrs) when is_binary(parent_id) do
     parent = get_node!(parent_id)
     create_child_node(parent, attrs)
   end
@@ -108,7 +108,7 @@ defmodule WorkTree.MindMaps do
   @doc """
   Creates a child node for inline editing (title can be empty initially).
   """
-  def create_inline_child_node(parent_id, attrs) when is_integer(parent_id) do
+  def create_inline_child_node(parent_id, attrs) when is_binary(parent_id) do
     parent = get_node!(parent_id)
     create_inline_child_node(parent, attrs)
   end
@@ -128,7 +128,7 @@ defmodule WorkTree.MindMaps do
         %Node{}
         |> changeset_fn.(Map.merge(attrs, %{
           "parent_id" => parent.id,
-          "path" => "temp",
+          "path" => [],
           "position" => position,
           "depth" => depth
         }))
@@ -319,7 +319,7 @@ defmodule WorkTree.MindMaps do
   Gets the full subtree rooted at a node.
   Returns a nested structure.
   """
-  def get_subtree(node_id) when is_integer(node_id) do
+  def get_subtree(node_id) when is_binary(node_id) do
     root = get_node!(node_id)
     get_subtree(root)
   end
@@ -355,7 +355,7 @@ defmodule WorkTree.MindMaps do
     |> Repo.all()
   end
 
-  def get_children(node_id) when is_integer(node_id) do
+  def get_children(node_id) when is_binary(node_id) do
     Node
     |> where([n], n.parent_id == ^node_id and is_nil(n.deleted_at))
     |> order_by([n], n.position)

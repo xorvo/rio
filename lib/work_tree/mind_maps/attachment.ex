@@ -2,6 +2,9 @@ defmodule WorkTree.MindMaps.Attachment do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   @type_values ~w(link image)
 
   schema "attachments" do

@@ -14,7 +14,7 @@ defmodule WorkTreeWeb.MindMapLive.LinkHandlers do
   Opens the link edit modal for a node.
   """
   def open_link_modal(socket, %{"id" => id}) do
-    node = Enum.find(socket.assigns.nodes, &(&1.id == String.to_integer(id)))
+    node = Enum.find(socket.assigns.nodes, &(&1.id == id))
     {:noreply, assign(socket, :link_edit_node, node)}
   end
 
@@ -59,7 +59,7 @@ defmodule WorkTreeWeb.MindMapLive.LinkHandlers do
   Opens a node's link in a new browser tab.
   """
   def open_node_link(socket, %{"id" => id}) do
-    node = Enum.find(socket.assigns.nodes, &(&1.id == String.to_integer(id)))
+    node = Enum.find(socket.assigns.nodes, &(&1.id == id))
 
     if node && node.link do
       {:noreply, push_event(socket, "open-link", %{url: node.link})}

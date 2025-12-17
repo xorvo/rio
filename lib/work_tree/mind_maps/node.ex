@@ -2,12 +2,15 @@ defmodule WorkTree.MindMaps.Node do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   schema "nodes" do
     field :title, :string
     field :body, :map, default: %{}
     field :is_todo, :boolean, default: false
     field :todo_completed, :boolean, default: false
-    field :path, :string
+    field :path, {:array, :binary_id}, default: []
     field :position, :integer, default: 0
     field :depth, :integer, default: 0
     field :edge_label, :string

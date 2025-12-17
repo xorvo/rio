@@ -14,8 +14,7 @@ defmodule WorkTreeWeb.MindMapLive.InlineEditHandlers do
   Saves inline edit, updating the node title or deleting if empty.
   """
   def save_inline_edit(socket, %{"title" => title, "id" => id}) do
-    node_id = String.to_integer(id)
-    node = MindMaps.get_node!(node_id)
+    node = MindMaps.get_node!(id)
     title = String.trim(title)
 
     if title == "" do
@@ -60,12 +59,10 @@ defmodule WorkTreeWeb.MindMapLive.InlineEditHandlers do
   Starts inline editing for a node.
   """
   def start_inline_edit(socket, %{"id" => id}) do
-    node_id = if is_binary(id), do: String.to_integer(id), else: id
-
     {:noreply,
      socket
-     |> assign(:editing_node_id, node_id)
-     |> push_event("center-node", %{id: node_id})}
+     |> assign(:editing_node_id, id)
+     |> push_event("center-node", %{id: id})}
   end
 
   @doc """
@@ -77,7 +74,7 @@ defmodule WorkTreeWeb.MindMapLive.InlineEditHandlers do
     if socket.assigns.editing_node_id == nil do
       {:noreply, socket}
     else
-      node_id = params["id"] |> String.to_integer()
+      node_id = params["id"]
 
       case MindMaps.get_node(node_id) do
         nil ->
@@ -126,7 +123,6 @@ defmodule WorkTreeWeb.MindMapLive.InlineEditHandlers do
   Creates a new child node under specified parent and starts inline editing.
   """
   def add_child_node(socket, %{"parent-id" => parent_id}) do
-    parent_id = String.to_integer(parent_id)
     {:ok, new_node} = MindMaps.create_child_node(parent_id, %{"title" => "New node"})
 
     {:noreply,

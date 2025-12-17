@@ -9,7 +9,7 @@ import Config
 
 config :work_tree,
   ecto_repos: [WorkTree.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime, binary_id: true]
 
 # Configures the endpoint
 config :work_tree, WorkTreeWeb.Endpoint,

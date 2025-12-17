@@ -37,10 +37,9 @@ defmodule WorkTree.MindMaps.Views do
 
     query =
       if parent_id do
-        # Filter to descendants of the given parent
-        parent = Repo.get!(Node, parent_id)
-        path_prefix = "#{parent.path}%"
-        where(query, [n], like(n.path, ^path_prefix))
+        # Filter to descendants of the given parent using array containment
+        # Cast to Ecto.UUID for proper binary encoding
+        where(query, [n], type(^parent_id, Ecto.UUID) == fragment("ANY(?)", n.path))
       else
         query
       end
@@ -150,12 +149,8 @@ defmodule WorkTree.MindMaps.Views do
   # Private helpers
 
   defp get_ancestor_titles(%Node{path: path}) do
-    # Parse path to get ancestor IDs (format: "1.2.3")
-    ancestor_ids =
-      path
-      |> String.split(".")
-      |> Enum.map(&String.to_integer/1)
-      |> Enum.drop(-1)  # Remove self
+    # Path is already a UUID array, just drop self (last element)
+    ancestor_ids = Enum.drop(path, -1)
 
     if ancestor_ids == [] do
       []
