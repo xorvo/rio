@@ -130,7 +130,7 @@ defmodule WorkTreeWeb.Components.TodoFilterModalComponent do
         <span :if={@node.priority != nil} class={["search-result-priority", Helpers.priority_class(@node.priority, :css)]}>
           P{@node.priority}
         </span>
-        <span :if={@node.due_date != nil} class={["todo-result-due-date", Helpers.due_date_class(@node.due_date)]}>
+        <span :if={@node.due_date != nil && !@node.todo_completed} class={["todo-result-due-date", Helpers.due_date_class(@node.due_date)]}>
           {format_days_remaining(@days_remaining)}
         </span>
       </div>

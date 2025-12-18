@@ -129,7 +129,7 @@
           P{node.priority}
         </div>
         <div
-          :if={node.due_date != nil}
+          :if={node.due_date != nil && !node.todo_completed}
           class={[
             "mind-map-due-date-badge",
             due_date_class(node.due_date),
