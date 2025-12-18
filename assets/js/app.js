@@ -1124,6 +1124,10 @@ const Hooks = {
       const node = this.canvas?.querySelector(`#node-${nodeId}`)
       if (!node) return
 
+      // Reset scroll position - pan should handle all positioning
+      this.el.scrollTop = 0
+      this.el.scrollLeft = 0
+
       const rect = this.el.getBoundingClientRect()
       const nodeX = parseFloat(node.style.left) || 0
       const nodeY = parseFloat(node.style.top) || 0
