@@ -110,11 +110,26 @@
         <% end %>
         <div :if={node.is_todo} class="mind-map-todo-indicator">
           <%= if node.todo_completed do %>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-3 w-3"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
             </svg>
           <% else %>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-3 w-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <circle cx="12" cy="12" r="9" stroke-width="2" />
             </svg>
           <% end %>
@@ -229,7 +244,9 @@
   <WorkTreeWeb.Components.KeyboardHintsComponent.keyboard_hints hints_expanded={@hints_expanded} />
 
   <%!-- Delete confirmation toast --%>
-  <WorkTreeWeb.Components.ToastComponent.delete_confirmation_toast pending_deletion={@pending_deletion} />
+  <WorkTreeWeb.Components.ToastComponent.delete_confirmation_toast pending_deletion={
+    @pending_deletion
+  } />
 
   <%!-- Undo toast notification --%>
   <WorkTreeWeb.Components.ToastComponent.undo_toast deletion_batch={@deletion_batch} />
@@ -242,7 +259,14 @@
 </div>
 
 <%!-- Node detail modal --%>
-<.modal :if={@selected_node} id="node-detail-modal" show on_cancel={JS.push("close_detail")}>
+<.modal
+  :if={@selected_node}
+  id="node-detail-modal"
+  show
+  on_cancel={JS.push("close_detail")}
+  show_close_button={false}
+  max_width="max-w-2xl"
+>
   <.live_component
     module={WorkTreeWeb.Components.NodeDetailComponent}
     id="node-detail"
@@ -258,6 +282,8 @@
   id="node-form-modal"
   show
   on_cancel={JS.patch(~p"/node/#{@root.id}")}
+  show_close_button={false}
+  max_width="max-w-2xl"
 >
   <.live_component
     module={WorkTreeWeb.MindMapLive.NodeFormComponent}

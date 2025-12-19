@@ -465,6 +465,8 @@ defmodule WorkTreeWeb.CoreComponents do
   attr :id, :string, required: true
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
+  attr :show_close_button, :boolean, default: true
+  attr :max_width, :string, default: "max-w-lg"
   slot :inner_block, required: true
 
   def modal(assigns) do
@@ -476,7 +478,11 @@ defmodule WorkTreeWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class={["relative z-50", !@show && "hidden"]}
     >
-      <div id={"#{@id}-bg"} class="fixed inset-0 bg-base-300/80 transition-opacity" aria-hidden="true" />
+      <div
+        id={"#{@id}-bg"}
+        class="fixed inset-0 bg-base-300/80 transition-opacity"
+        aria-hidden="true"
+      />
       <div
         class="fixed inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
@@ -486,15 +492,16 @@ defmodule WorkTreeWeb.CoreComponents do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center p-4">
-          <div class="w-full max-w-lg">
+          <div class={["w-full", @max_width]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="relative bg-base-100 rounded-lg shadow-xl p-6"
+              class="relative bg-base-100 rounded-lg shadow-xl p-6 max-h-[85vh] overflow-y-auto scrollbar-hide"
             >
               <button
+                :if={@show_close_button}
                 phx-click={JS.exec("data-cancel", to: "##{@id}")}
                 type="button"
                 class="absolute top-4 right-4"
@@ -502,7 +509,9 @@ defmodule WorkTreeWeb.CoreComponents do
               >
                 <.icon name="hero-x-mark" class="size-5 opacity-60 hover:opacity-100" />
               </button>
-              <div id={"#{@id}-content"}>
+              <%!-- This is a hidden element to focus on when the modal is opened to prevent auto-focusing the content --%>
+              <div id={"#{@id}-content-focus-trap"} tabindex="0"></div>
+              <div id={"#{@id}-content"} tabindex="0">
                 {render_slot(@inner_block)}
               </div>
             </.focus_wrap>
@@ -523,7 +532,7 @@ defmodule WorkTreeWeb.CoreComponents do
     )
     |> show("##{id}-container")
     |> JS.add_class("overflow-hidden", to: "body")
-    |> JS.focus_first(to: "##{id}-content")
+    |> JS.focus_first(to: "##{id}-content-focus-trap")
   end
 
   defp hide_modal(js \\ %JS{}, id) do
