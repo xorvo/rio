@@ -12,21 +12,33 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   @doc """
   Handle a keydown event and return the appropriate response.
   """
-  def handle_key(socket, key, opts \\ [])
+  def handle_key(socket, event, opts \\ [])
 
   # Vim navigation keys
-  def handle_key(socket, "h", _opts), do: {:noreply, Navigation.navigate_to(socket, :parent)}
-  def handle_key(socket, "l", _opts), do: {:noreply, Navigation.navigate_to(socket, :child)}
-  def handle_key(socket, "L", _opts), do: {:noreply, Navigation.navigate_to(socket, :child)}
-  def handle_key(socket, "j", _opts), do: {:noreply, Navigation.navigate_to(socket, :next_sibling)}
-  def handle_key(socket, "k", _opts), do: {:noreply, Navigation.navigate_to(socket, :prev_sibling)}
+  def handle_key(socket, %{"key" => "h"}, _opts),
+    do: {:noreply, Navigation.navigate_to(socket, :parent)}
+
+  def handle_key(socket, %{"key" => "l"}, _opts),
+    do: {:noreply, Navigation.navigate_to(socket, :child)}
+
+  def handle_key(socket, %{"key" => "L"}, _opts),
+    do: {:noreply, Navigation.navigate_to(socket, :child)}
+
+  def handle_key(socket, %{"key" => "j"}, _opts),
+    do: {:noreply, Navigation.navigate_to(socket, :next_sibling)}
+
+  def handle_key(socket, %{"key" => "k"}, _opts),
+    do: {:noreply, Navigation.navigate_to(socket, :prev_sibling)}
 
   # Capital J/K to jump across subtrees (cousins)
-  def handle_key(socket, "J", _opts), do: {:noreply, Navigation.navigate_to(socket, :next_cousin)}
-  def handle_key(socket, "K", _opts), do: {:noreply, Navigation.navigate_to(socket, :prev_cousin)}
+  def handle_key(socket, %{"key" => "J"}, _opts),
+    do: {:noreply, Navigation.navigate_to(socket, :next_cousin)}
+
+  def handle_key(socket, %{"key" => "K"}, _opts),
+    do: {:noreply, Navigation.navigate_to(socket, :prev_cousin)}
 
   # Delete with backspace or x - supports batch delete
-  def handle_key(socket, key, opts) when key in ["Backspace", "x"] do
+  def handle_key(socket, %{"key" => key}, opts) when key in ["Backspace", "x"] do
     selected_ids = socket.assigns.selected_node_ids
 
     if MapSet.size(selected_ids) > 0 do
@@ -47,19 +59,19 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
     end
   end
 
-  # Enter to open details
-  def handle_key(socket, "Enter", _opts) do
+  # 'v' to view details
+  def handle_key(socket, %{"key" => "v"}, _opts) do
     node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
     {:noreply, assign(socket, :selected_node, node)}
   end
 
   # Escape to close details
-  def handle_key(socket, "Escape", _opts) do
+  def handle_key(socket, %{"key" => "Escape"}, _opts) do
     {:noreply, assign(socket, :selected_node, nil)}
   end
 
   # 'o' to create new child node
-  def handle_key(socket, "o", opts) do
+  def handle_key(socket, %{"key" => "o"}, opts) do
     reload_fn = Keyword.fetch!(opts, :reload_fn)
     parent_id = socket.assigns.focused_node_id
     {:ok, new_node} = MindMaps.create_child_node(parent_id, %{"title" => "New node"})
@@ -73,7 +85,7 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   end
 
   # 'O' (Shift+o) to create new sibling node (no effect on root)
-  def handle_key(socket, "O", opts) do
+  def handle_key(socket, %{"key" => "O"}, opts) do
     focused_id = socket.assigns.focused_node_id
     node = Enum.find(socket.assigns.nodes, &(&1.id == focused_id))
 
@@ -94,7 +106,7 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   end
 
   # 't' to toggle todo state (converts to todo if not already)
-  def handle_key(socket, "t", opts) do
+  def handle_key(socket, %{"key" => "t"}, opts) do
     reload_fn = Keyword.fetch!(opts, :reload_fn)
     node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
 
@@ -106,6 +118,7 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
         # Convert to todo
         {:ok, _} = MindMaps.update_node(node, %{is_todo: true})
       end
+
       {:noreply, reload_fn.(socket)}
     else
       {:noreply, socket}
@@ -113,7 +126,7 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   end
 
   # 'f' to focus subtree
-  def handle_key(socket, "f", _opts) do
+  def handle_key(socket, %{"key" => "f"}, _opts) do
     focused_id = socket.assigns.focused_node_id
 
     if focused_id != socket.assigns.root.id do
@@ -124,7 +137,7 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   end
 
   # 'H' (Shift+h) - on root node: jump up one level; otherwise: same as 'h' (navigate to parent)
-  def handle_key(socket, "H", _opts) do
+  def handle_key(socket, %{"key" => "H"}, _opts) do
     focused_id = socket.assigns.focused_node_id
     root_id = socket.assigns.root.id
     ancestors = socket.assigns.ancestors
@@ -140,7 +153,7 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   end
 
   # 'i' to start inline editing on focused node
-  def handle_key(socket, "i", _opts) do
+  def handle_key(socket, %{"key" => "i"}, _opts) do
     focused_id = socket.assigns.focused_node_id
 
     {:noreply,
@@ -149,8 +162,16 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
      |> Phoenix.LiveView.push_event("center-node", %{id: focused_id})}
   end
 
+  # 'c' to center focused node in viewport
+  def handle_key(socket, %{"key" => "c"}, _opts) do
+    focused_id = socket.assigns.focused_node_id
+
+    {:noreply,
+     Phoenix.LiveView.push_event(socket, "center-node", %{id: focused_id})}
+  end
+
   # 'a' to attach/edit link (quick inline input)
-  def handle_key(socket, "a", _opts) do
+  def handle_key(socket, %{"key" => "a"}, _opts) do
     node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
 
     {:noreply,
@@ -160,39 +181,46 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   end
 
   # 'g' to go to (open) link - handled via JS hook reading data-node-link attribute
-  def handle_key(socket, "g", _opts) do
+  def handle_key(socket, %{"key" => "g"}, _opts) do
     focused_id = socket.assigns.focused_node_id
-    {:noreply, Phoenix.LiveView.push_event(socket, "open-focused-node-link", %{node_id: focused_id})}
+
+    {:noreply,
+     Phoenix.LiveView.push_event(socket, "open-focused-node-link", %{node_id: focused_id})}
   end
 
   # Space to toggle hints expansion
-  def handle_key(socket, " ", _opts) do
+  def handle_key(socket, %{"key" => " "}, _opts) do
     {:noreply, assign(socket, :hints_expanded, !socket.assigns.hints_expanded)}
   end
 
   # 'T' (Shift+t) to open search
-  def handle_key(socket, "T", _opts) do
+  def handle_key(socket, %{"key" => "T"}, _opts) do
+    WorkTreeWeb.MindMapLive.TodoFilterHandlers.open_todo_filter(socket)
+  end
+
+  # 'cmd+p' to open the search modal
+  def handle_key(socket, %{"key" => "p", "metaKey" => true}, _opts) do
+    {:noreply, assign(socket, :search_open, true)}
+  end
+
+  # 'ctrl+p' to open the search modal
+  def handle_key(socket, %{"key" => "p", "ctrlKey" => true}, _opts) do
     {:noreply, assign(socket, :search_open, true)}
   end
 
   # 'p' to open priority picker
-  def handle_key(socket, "p", _opts) do
+  def handle_key(socket, %{"key" => "p"}, _opts) do
     {:noreply, assign(socket, :priority_picker_open, true)}
   end
 
   # 'd' to open due date picker
-  def handle_key(socket, "d", _opts) do
+  def handle_key(socket, %{"key" => "d"}, _opts) do
     {:noreply, assign(socket, :due_date_picker_open, true)}
   end
 
-  # 'v' to open todo filter
-  def handle_key(socket, "v", _opts) do
-    WorkTreeWeb.MindMapLive.TodoFilterHandlers.open_todo_filter(socket)
-  end
-
   # Ignore tab
-  def handle_key(socket, "Tab", _opts), do: {:noreply, socket}
+  def handle_key(socket, %{"key" => "Tab"}, _opts), do: {:noreply, socket}
 
   # Default: ignore unhandled keys
-  def handle_key(socket, _key, _opts), do: {:noreply, socket}
+  def handle_key(socket, %{"key" => _key}, _opts), do: {:noreply, socket}
 end

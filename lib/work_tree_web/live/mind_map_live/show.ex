@@ -3,7 +3,18 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   alias WorkTree.MindMaps
   alias WorkTree.MindMaps.Layout
-  alias WorkTreeWeb.MindMapLive.{Navigation, KeyboardHandlers, Helpers, SearchHandlers, DeletionHandlers, InlineEditHandlers, LinkHandlers, DragHandlers, TodoFilterHandlers}
+
+  alias WorkTreeWeb.MindMapLive.{
+    Navigation,
+    KeyboardHandlers,
+    Helpers,
+    SearchHandlers,
+    DeletionHandlers,
+    InlineEditHandlers,
+    LinkHandlers,
+    DragHandlers,
+    TodoFilterHandlers
+  }
 
   @impl true
   def mount(params, _session, socket) do
@@ -98,11 +109,13 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     if meta_key do
       # Cmd+click toggles selection
       selected_ids = socket.assigns.selected_node_ids
-      new_selected = if MapSet.member?(selected_ids, id) do
-        MapSet.delete(selected_ids, id)
-      else
-        MapSet.put(selected_ids, id)
-      end
+
+      new_selected =
+        if MapSet.member?(selected_ids, id) do
+          MapSet.delete(selected_ids, id)
+        else
+          MapSet.put(selected_ids, id)
+        end
 
       {:noreply,
        socket
@@ -142,7 +155,16 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   def handle_event("toggle_todo", %{"id" => id}, socket) do
     node = MindMaps.get_node!(id)
-    {:ok, _} = MindMaps.toggle_todo(node)
+    {:ok, updated_node} = MindMaps.toggle_todo(node)
+
+    # Update selected_node if it's the same node (for modal refresh)
+    socket =
+      if socket.assigns.selected_node && socket.assigns.selected_node.id == id do
+        assign(socket, :selected_node, updated_node)
+      else
+        socket
+      end
+
     {:noreply, reload_tree(socket)}
   end
 
@@ -161,22 +183,23 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     {:noreply, push_navigate(socket, to: ~p"/node/#{id}")}
   end
 
-  def handle_event("keydown", %{"key" => key}, socket) do
+  def handle_event("keydown", event, socket) do
     # Ignore keyboard shortcuts while any modal or input is active
-    modal_active = socket.assigns.editing_node_id ||
-                   socket.assigns.link_edit_node ||
-                   socket.assigns.selected_node ||
-                   socket.assigns.modal_action ||
-                   socket.assigns.search_open ||
-                   socket.assigns.priority_picker_open ||
-                   socket.assigns.due_date_picker_open ||
-                   socket.assigns.link_input_open ||
-                   socket.assigns.todo_filter_open
+    modal_active =
+      socket.assigns.editing_node_id ||
+        socket.assigns.link_edit_node ||
+        socket.assigns.selected_node ||
+        socket.assigns.modal_action ||
+        socket.assigns.search_open ||
+        socket.assigns.priority_picker_open ||
+        socket.assigns.due_date_picker_open ||
+        socket.assigns.link_input_open ||
+        socket.assigns.todo_filter_open
 
     if modal_active do
       {:noreply, socket}
     else
-      KeyboardHandlers.handle_key(socket, key,
+      KeyboardHandlers.handle_key(socket, event,
         delete_fn: &DeletionHandlers.delete_node_with_undo/2,
         batch_delete_fn: &DeletionHandlers.batch_delete_nodes/2,
         reload_fn: &reload_tree/1
@@ -185,20 +208,36 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   end
 
   # Inline edit events - delegate to InlineEditHandlers
-  def handle_event("save_inline_edit", params, socket), do: InlineEditHandlers.save_inline_edit(socket, params)
-  def handle_event("cancel_inline_edit", _params, socket), do: InlineEditHandlers.cancel_inline_edit(socket)
-  def handle_event("inline_edit_keydown", params, socket), do: InlineEditHandlers.handle_keydown(socket, params)
-  def handle_event("start_inline_edit", params, socket), do: InlineEditHandlers.start_inline_edit(socket, params)
-  def handle_event("blur_inline_edit", params, socket), do: InlineEditHandlers.blur_inline_edit(socket, params)
+  def handle_event("save_inline_edit", params, socket),
+    do: InlineEditHandlers.save_inline_edit(socket, params)
+
+  def handle_event("cancel_inline_edit", _params, socket),
+    do: InlineEditHandlers.cancel_inline_edit(socket)
+
+  def handle_event("inline_edit_keydown", params, socket),
+    do: InlineEditHandlers.handle_keydown(socket, params)
+
+  def handle_event("start_inline_edit", params, socket),
+    do: InlineEditHandlers.start_inline_edit(socket, params)
+
+  def handle_event("blur_inline_edit", params, socket),
+    do: InlineEditHandlers.blur_inline_edit(socket, params)
+
   def handle_event("add_node_inline", _, socket), do: InlineEditHandlers.add_node_inline(socket)
-  def handle_event("add_child_node", params, socket), do: InlineEditHandlers.add_child_node(socket, params)
+
+  def handle_event("add_child_node", params, socket),
+    do: InlineEditHandlers.add_child_node(socket, params)
 
   # Link events - delegate to LinkHandlers
-  def handle_event("open_link_modal", params, socket), do: LinkHandlers.open_link_modal(socket, params)
+  def handle_event("open_link_modal", params, socket),
+    do: LinkHandlers.open_link_modal(socket, params)
+
   def handle_event("close_link_modal", _, socket), do: LinkHandlers.close_link_modal(socket)
   def handle_event("save_link", params, socket), do: LinkHandlers.save_link(socket, params)
   def handle_event("validate_link", _params, socket), do: LinkHandlers.validate_link(socket)
-  def handle_event("open_node_link", params, socket), do: LinkHandlers.open_node_link(socket, params)
+
+  def handle_event("open_node_link", params, socket),
+    do: LinkHandlers.open_node_link(socket, params)
 
   # Drag events - delegate to DragHandlers
   def handle_event("drag_start", %{"node_id" => node_id}, socket) do
@@ -249,22 +288,47 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_event("search", params, socket), do: SearchHandlers.handle_search(socket, params)
   def handle_event("search_select_prev", _, socket), do: SearchHandlers.select_prev(socket)
   def handle_event("search_select_next", _, socket), do: SearchHandlers.select_next(socket)
-  def handle_event("search_go_to_result", %{"index" => index}, socket), do: SearchHandlers.go_to_result(socket, index)
-  def handle_event("search_select_index", %{"index" => index}, socket), do: SearchHandlers.select_index(socket, index)
+
+  def handle_event("search_go_to_result", %{"index" => index}, socket),
+    do: SearchHandlers.go_to_result(socket, index)
+
+  def handle_event("search_select_index", %{"index" => index}, socket),
+    do: SearchHandlers.select_index(socket, index)
+
   def handle_event("search_confirm", _, socket), do: SearchHandlers.confirm_selection(socket)
 
   # Todo filter events - delegate to TodoFilterHandlers
   def handle_event("open_todo_filter", _, socket), do: TodoFilterHandlers.open_todo_filter(socket)
-  def handle_event("close_todo_filter", _, socket), do: TodoFilterHandlers.close_todo_filter(socket)
-  def handle_event("todo_filter_toggle_scope", _, socket), do: TodoFilterHandlers.toggle_scope(socket)
-  def handle_event("todo_filter_set_scope", %{"scope" => "local"}, socket), do: TodoFilterHandlers.set_scope(socket, :local)
-  def handle_event("todo_filter_set_scope", %{"scope" => "global"}, socket), do: TodoFilterHandlers.set_scope(socket, :global)
-  def handle_event("todo_filter_toggle_completed", _, socket), do: TodoFilterHandlers.toggle_show_completed(socket)
-  def handle_event("todo_filter_select_prev", _, socket), do: TodoFilterHandlers.select_prev(socket)
-  def handle_event("todo_filter_select_next", _, socket), do: TodoFilterHandlers.select_next(socket)
-  def handle_event("todo_filter_go_to_result", %{"index" => index}, socket), do: TodoFilterHandlers.go_to_result(socket, index)
-  def handle_event("todo_filter_select_index", %{"index" => index}, socket), do: TodoFilterHandlers.select_index(socket, index)
-  def handle_event("todo_filter_confirm", _, socket), do: TodoFilterHandlers.confirm_selection(socket)
+
+  def handle_event("close_todo_filter", _, socket),
+    do: TodoFilterHandlers.close_todo_filter(socket)
+
+  def handle_event("todo_filter_toggle_scope", _, socket),
+    do: TodoFilterHandlers.toggle_scope(socket)
+
+  def handle_event("todo_filter_set_scope", %{"scope" => "local"}, socket),
+    do: TodoFilterHandlers.set_scope(socket, :local)
+
+  def handle_event("todo_filter_set_scope", %{"scope" => "global"}, socket),
+    do: TodoFilterHandlers.set_scope(socket, :global)
+
+  def handle_event("todo_filter_toggle_completed", _, socket),
+    do: TodoFilterHandlers.toggle_show_completed(socket)
+
+  def handle_event("todo_filter_select_prev", _, socket),
+    do: TodoFilterHandlers.select_prev(socket)
+
+  def handle_event("todo_filter_select_next", _, socket),
+    do: TodoFilterHandlers.select_next(socket)
+
+  def handle_event("todo_filter_go_to_result", %{"index" => index}, socket),
+    do: TodoFilterHandlers.go_to_result(socket, index)
+
+  def handle_event("todo_filter_select_index", %{"index" => index}, socket),
+    do: TodoFilterHandlers.select_index(socket, index)
+
+  def handle_event("todo_filter_confirm", _, socket),
+    do: TodoFilterHandlers.confirm_selection(socket)
 
   # Priority picker events
   def handle_event("close_priority_picker", _, socket) do
@@ -622,6 +686,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_info({:context_menu_action, :batch_mark_complete, node_ids}, socket) do
     Enum.each(node_ids, fn id ->
       node = MindMaps.get_node!(id)
+
       if node.is_todo do
         MindMaps.update_node(node, %{todo_completed: true})
       end
@@ -637,6 +702,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_info({:context_menu_action, :batch_mark_incomplete, node_ids}, socket) do
     Enum.each(node_ids, fn id ->
       node = MindMaps.get_node!(id)
+
       if node.is_todo do
         MindMaps.update_node(node, %{todo_completed: false})
       end

@@ -30,6 +30,10 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
               <span class="kbd kbd-xs">H</span>
               <span class="hints-desc">go up one level</span>
             </div>
+            <div class="hints-row">
+              <span class="kbd kbd-xs">c</span>
+              <span class="hints-desc">center node</span>
+            </div>
           </div>
           <div class="hints-section">
             <div class="hints-title">Nodes</div>
@@ -45,13 +49,13 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
               <span class="kbd kbd-xs">⌫</span>
               <span class="hints-desc">delete node</span>
             </div>
+            <div class="hints-row">
+              <span class="kbd kbd-xs">v</span>
+              <span class="hints-desc">view details</span>
+            </div>
           </div>
           <div class="hints-section">
             <div class="hints-title">Actions</div>
-            <div class="hints-row">
-              <span class="kbd kbd-xs">Enter</span>
-              <span class="hints-desc">open details</span>
-            </div>
             <div class="hints-row">
               <span class="kbd kbd-xs">t</span>
               <span class="hints-desc">toggle todo</span>
@@ -69,8 +73,12 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
               <span class="hints-desc">open link</span>
             </div>
             <div class="hints-row">
+              <span class="kbd kbd-xs">Cmd+P</span>
+              <span class="hints-desc">open search</span>
+            </div>
+            <div class="hints-row">
               <span class="kbd kbd-xs">T</span>
-              <span class="hints-desc">search nodes</span>
+              <span class="hints-desc">open todo filter</span>
             </div>
           </div>
         </div>
@@ -83,8 +91,8 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
         navigate <span class="mx-2">·</span>
         <span class="kbd kbd-xs">o</span>
         child <span class="mx-2">·</span>
-        <span class="kbd kbd-xs">Enter</span>
-        details <span class="mx-2">·</span>
+        <span class="kbd kbd-xs">v</span>
+        view <span class="mx-2">·</span>
         <span class="kbd kbd-xs">⌫</span>
         delete <span class="mx-2">·</span>
         <span class="kbd kbd-xs">Space</span>
