@@ -78,7 +78,9 @@ defmodule WorkTreeWeb.MindMapLive.Show do
          |> assign(:show_archived, false)
          |> assign(:pending_archive, nil)
          |> assign(:archive_batch, nil)
-         |> assign(:archive_undo_timer, nil)}
+         |> assign(:archive_undo_timer, nil)
+         # Theme picker
+         |> assign(:theme_picker_open, false)}
     end
   end
 
@@ -375,6 +377,23 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   def handle_event("todo_filter_confirm", _, socket),
     do: TodoFilterHandlers.confirm_selection(socket)
+
+  # Theme picker events
+  def handle_event("open_theme_picker", _, socket) do
+    {:noreply, assign(socket, :theme_picker_open, true)}
+  end
+
+  def handle_event("close_theme_picker", _, socket) do
+    {:noreply, assign(socket, :theme_picker_open, false)}
+  end
+
+  def handle_event("theme_picker_keydown", %{"key" => "Escape"}, socket) do
+    {:noreply, assign(socket, :theme_picker_open, false)}
+  end
+
+  def handle_event("theme_picker_keydown", _, socket) do
+    {:noreply, socket}
+  end
 
   # Priority picker events
   def handle_event("close_priority_picker", _, socket) do

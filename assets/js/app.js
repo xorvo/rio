@@ -753,9 +753,6 @@ const Hooks = {
         clearInterval(this.edgePanInterval);
         this.edgePanInterval = null;
 
-        // Save viewport state after edge pan
-        const container = document.getElementById("mind-map-container");
-        container?.__liveViewHook?.saveViewportState();
       }
     },
 
@@ -853,10 +850,10 @@ const Hooks = {
       this.arrowPanAcceleration = 0.5;
       this.arrowPanAnimationId = null;
 
-      // Debounce timer for localStorage
+      // Debounce timer for sessionStorage saves
       this.saveTimer = null;
 
-      // Load saved viewport state
+      // Load saved viewport state from sessionStorage (per-tab persistence)
       this.loadViewportState();
 
       // If no saved state, center the root node
@@ -1256,7 +1253,8 @@ const Hooks = {
       if (!this.rootId) return;
 
       try {
-        const saved = localStorage.getItem(`work_tree:viewport:${this.rootId}`);
+        // Use sessionStorage for per-tab persistence (not shared across browser sessions)
+        const saved = sessionStorage.getItem(`work_tree:viewport:${this.rootId}`);
         if (saved) {
           const state = JSON.parse(saved);
           this.panX = state.panX ?? 0;
@@ -1276,13 +1274,13 @@ const Hooks = {
       if (this.saveTimer) clearTimeout(this.saveTimer);
       this.saveTimer = setTimeout(() => {
         try {
-          localStorage.setItem(
+          // Use sessionStorage for per-tab persistence (not shared across browser sessions)
+          sessionStorage.setItem(
             `work_tree:viewport:${this.rootId}`,
             JSON.stringify({
               panX: this.panX,
               panY: this.panY,
               zoom: this.zoom,
-              lastUpdated: Date.now(),
             })
           );
         } catch (e) {
