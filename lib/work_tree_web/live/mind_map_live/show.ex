@@ -208,7 +208,10 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   end
 
   def handle_event("undo_archive", _, socket), do: ArchiveHandlers.undo_archive(socket)
-  def handle_event("dismiss_archive_undo", _, socket), do: ArchiveHandlers.dismiss_archive_undo(socket)
+
+  def handle_event("dismiss_archive_undo", _, socket),
+    do: ArchiveHandlers.dismiss_archive_undo(socket)
+
   def handle_event("confirm_archive", _, socket), do: ArchiveHandlers.confirm_archive(socket)
   def handle_event("cancel_archive", _, socket), do: ArchiveHandlers.cancel_archive(socket)
 
@@ -426,38 +429,6 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     apply_priority(socket, priority)
   end
 
-  defp apply_priority(socket, priority) do
-    selected_ids = socket.assigns.selected_node_ids
-
-    if MapSet.size(selected_ids) > 0 do
-      # Batch mode
-      Enum.each(selected_ids, fn id ->
-        node = MindMaps.get_node!(id)
-        MindMaps.update_node(node, %{priority: priority})
-      end)
-
-      {:noreply,
-       socket
-       |> assign(:priority_picker_open, false)
-       |> assign(:selected_node_ids, MapSet.new())
-       |> reload_tree()}
-    else
-      # Single node mode
-      node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
-
-      if node do
-        {:ok, _} = MindMaps.update_node(node, %{priority: priority})
-
-        {:noreply,
-         socket
-         |> assign(:priority_picker_open, false)
-         |> reload_tree()}
-      else
-        {:noreply, assign(socket, :priority_picker_open, false)}
-      end
-    end
-  end
-
   # Due date picker events
   def handle_event("close_due_date_picker", _, socket) do
     {:noreply,
@@ -515,6 +486,76 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     {:noreply, assign(socket, :due_date_custom_mode, false)}
   end
 
+  # Link input events (quick inline link editor)
+  def handle_event("close_link_input", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:link_input_open, false)
+     |> assign(:link_input_node, nil)}
+  end
+
+  def handle_event("save_link_input", %{"link" => link}, socket) do
+    node = socket.assigns.link_input_node
+    link = String.trim(link)
+    link_value = if link == "", do: nil, else: link
+
+    case MindMaps.update_node(node, %{link: link_value}) do
+      {:ok, _updated_node} ->
+        {:noreply,
+         socket
+         |> assign(:link_input_open, false)
+         |> assign(:link_input_node, nil)
+         |> reload_tree()}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Invalid URL")}
+    end
+  end
+
+  def handle_event("link_input_keydown", %{"key" => "Escape"}, socket) do
+    {:noreply,
+     socket
+     |> assign(:link_input_open, false)
+     |> assign(:link_input_node, nil)}
+  end
+
+  def handle_event("link_input_keydown", _, socket) do
+    {:noreply, socket}
+  end
+
+  # Private helper functions for handle_event clauses
+  defp apply_priority(socket, priority) do
+    selected_ids = socket.assigns.selected_node_ids
+
+    if MapSet.size(selected_ids) > 0 do
+      # Batch mode
+      Enum.each(selected_ids, fn id ->
+        node = MindMaps.get_node!(id)
+        MindMaps.update_node(node, %{priority: priority})
+      end)
+
+      {:noreply,
+       socket
+       |> assign(:priority_picker_open, false)
+       |> assign(:selected_node_ids, MapSet.new())
+       |> reload_tree()}
+    else
+      # Single node mode
+      node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
+
+      if node do
+        {:ok, _} = MindMaps.update_node(node, %{priority: priority})
+
+        {:noreply,
+         socket
+         |> assign(:priority_picker_open, false)
+         |> reload_tree()}
+      else
+        {:noreply, assign(socket, :priority_picker_open, false)}
+      end
+    end
+  end
+
   defp apply_due_date_option(socket, option) do
     due_date = calculate_due_date(option)
     apply_due_date(socket, due_date)
@@ -570,43 +611,6 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     end
   end
 
-  # Link input events (quick inline link editor)
-  def handle_event("close_link_input", _, socket) do
-    {:noreply,
-     socket
-     |> assign(:link_input_open, false)
-     |> assign(:link_input_node, nil)}
-  end
-
-  def handle_event("save_link_input", %{"link" => link}, socket) do
-    node = socket.assigns.link_input_node
-    link = String.trim(link)
-    link_value = if link == "", do: nil, else: link
-
-    case MindMaps.update_node(node, %{link: link_value}) do
-      {:ok, _updated_node} ->
-        {:noreply,
-         socket
-         |> assign(:link_input_open, false)
-         |> assign(:link_input_node, nil)
-         |> reload_tree()}
-
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Invalid URL")}
-    end
-  end
-
-  def handle_event("link_input_keydown", %{"key" => "Escape"}, socket) do
-    {:noreply,
-     socket
-     |> assign(:link_input_open, false)
-     |> assign(:link_input_node, nil)}
-  end
-
-  def handle_event("link_input_keydown", _, socket) do
-    {:noreply, socket}
-  end
-
   @impl true
   def handle_info({WorkTreeWeb.MindMapLive.NodeFormComponent, {:saved, _node}}, socket) do
     {:noreply,
@@ -617,7 +621,9 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   def handle_info(:clear_undo, socket), do: DeletionHandlers.handle_clear_undo(socket)
   def handle_info(:clear_move_undo, socket), do: DragHandlers.handle_clear_move_undo(socket)
-  def handle_info(:clear_archive_undo, socket), do: ArchiveHandlers.handle_clear_archive_undo(socket)
+
+  def handle_info(:clear_archive_undo, socket),
+    do: ArchiveHandlers.handle_clear_archive_undo(socket)
 
   # Context menu action handlers
   def handle_info({:close_context_menu, _}, socket) do
@@ -843,4 +849,5 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   defp node_children_count(node, nodes), do: Helpers.node_children_count(node, nodes)
   defp get_subtree_count(node, nodes), do: Helpers.get_subtree_count(node, nodes)
   defp get_descendant_ids(node, nodes), do: Helpers.get_descendant_ids(node, nodes)
+  defp has_body_content?(body), do: Helpers.has_body_content?(body)
 end

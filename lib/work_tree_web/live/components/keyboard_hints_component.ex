@@ -46,12 +46,20 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
               <span class="hints-desc">add sibling</span>
             </div>
             <div class="hints-row">
+              <span class="kbd kbd-xs">i</span>
+              <span class="hints-desc">edit title</span>
+            </div>
+            <div class="hints-row">
+              <span class="kbd kbd-xs">Space</span>
+              <span class="hints-desc">view details</span>
+            </div>
+            <div class="hints-row">
               <span class="kbd kbd-xs">⌫</span>
               <span class="hints-desc">delete node</span>
             </div>
             <div class="hints-row">
-              <span class="kbd kbd-xs">v</span>
-              <span class="hints-desc">view details</span>
+              <span class="kbd kbd-xs">z</span>
+              <span class="hints-desc">archive node</span>
             </div>
           </div>
           <div class="hints-section">
@@ -65,6 +73,10 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
               <span class="hints-desc">set priority</span>
             </div>
             <div class="hints-row">
+              <span class="kbd kbd-xs">d</span>
+              <span class="hints-desc">set due date</span>
+            </div>
+            <div class="hints-row">
               <span class="kbd kbd-xs">a</span>
               <span class="hints-desc">attach link</span>
             </div>
@@ -72,18 +84,21 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
               <span class="kbd kbd-xs">g</span>
               <span class="hints-desc">open link</span>
             </div>
+          </div>
+          <div class="hints-section">
+            <div class="hints-title">Modals</div>
             <div class="hints-row">
-              <span class="kbd kbd-xs">Cmd+P</span>
-              <span class="hints-desc">open search</span>
+              <span class="kbd kbd-xs">⌘P</span>
+              <span class="hints-desc">search</span>
             </div>
             <div class="hints-row">
               <span class="kbd kbd-xs">T</span>
-              <span class="hints-desc">open todo filter</span>
+              <span class="hints-desc">todo list</span>
             </div>
           </div>
         </div>
         <div class="hints-footer">
-          <span class="kbd kbd-xs">Space</span> to collapse
+          <span class="kbd kbd-xs">?</span> to collapse
         </div>
       <% else %>
         <%!-- Compact view --%>
@@ -91,11 +106,11 @@ defmodule WorkTreeWeb.Components.KeyboardHintsComponent do
         navigate <span class="mx-2">·</span>
         <span class="kbd kbd-xs">o</span>
         child <span class="mx-2">·</span>
-        <span class="kbd kbd-xs">v</span>
-        view <span class="mx-2">·</span>
+        <span class="kbd kbd-xs">Space</span>
+        details <span class="mx-2">·</span>
         <span class="kbd kbd-xs">⌫</span>
         delete <span class="mx-2">·</span>
-        <span class="kbd kbd-xs">Space</span>
+        <span class="kbd kbd-xs">?</span>
         more
       <% end %>
     </div>

@@ -84,6 +84,7 @@ defmodule WorkTreeWeb.MindMapLive.Navigation do
     else
       # Get parent and its siblings (aunts/uncles)
       parent = Enum.find(nodes, &(&1.id == parent_id))
+
       parent_siblings =
         nodes
         |> Enum.filter(&(&1.parent_id == parent.parent_id))
@@ -125,6 +126,7 @@ defmodule WorkTreeWeb.MindMapLive.Navigation do
     else
       # Get parent and its siblings (aunts/uncles)
       parent = Enum.find(nodes, &(&1.id == parent_id))
+
       parent_siblings =
         nodes
         |> Enum.filter(&(&1.parent_id == parent.parent_id))

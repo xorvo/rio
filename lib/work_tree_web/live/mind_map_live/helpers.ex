@@ -94,6 +94,18 @@ defmodule WorkTreeWeb.MindMapLive.Helpers do
   end
 
   @doc """
+  Checks if a node body has meaningful content.
+  Body is a JSONB map with optional "content" key.
+  """
+  def has_body_content?(nil), do: false
+
+  def has_body_content?(%{"content" => content}) when is_binary(content),
+    do: String.trim(content) != ""
+
+  def has_body_content?(%{}), do: false
+  def has_body_content?(_), do: false
+
+  @doc """
   Truncates body text to a maximum length.
   """
   def truncate_body(nil), do: ""
@@ -116,8 +128,12 @@ defmodule WorkTreeWeb.MindMapLive.Helpers do
 
   def format_ancestry(ancestors) when is_list(ancestors) do
     case length(ancestors) do
-      1 -> Enum.at(ancestors, 0)
-      2 -> Enum.join(ancestors, " / ")
+      1 ->
+        Enum.at(ancestors, 0)
+
+      2 ->
+        Enum.join(ancestors, " / ")
+
       _ ->
         first = Enum.at(ancestors, 0)
         last_two = Enum.take(ancestors, -2)
@@ -157,6 +173,7 @@ defmodule WorkTreeWeb.MindMapLive.Helpers do
   """
   def edge_path(edge) do
     mid_x = (edge.source_x + edge.target_x) / 2
+
     "M #{edge.source_x} #{edge.source_y} C #{mid_x} #{edge.source_y}, #{mid_x} #{edge.target_y}, #{edge.target_x} #{edge.target_y}"
   end
 
@@ -200,7 +217,8 @@ defmodule WorkTreeWeb.MindMapLive.Helpers do
     # Add remaining text after last highlight
     final_segments =
       if last_pos < total_len do
-        segments ++ [{:text, Enum.slice(graphemes, last_pos, total_len - last_pos) |> Enum.join()}]
+        segments ++
+          [{:text, Enum.slice(graphemes, last_pos, total_len - last_pos) |> Enum.join()}]
       else
         segments
       end
@@ -208,8 +226,11 @@ defmodule WorkTreeWeb.MindMapLive.Helpers do
     # Convert to Phoenix HTML
     Phoenix.HTML.raw(
       Enum.map(final_segments, fn
-        {:text, str} -> Phoenix.HTML.html_escape(str) |> Phoenix.HTML.safe_to_string()
-        {:highlight, str} -> "<mark class=\"search-highlight\">#{Phoenix.HTML.html_escape(str) |> Phoenix.HTML.safe_to_string()}</mark>"
+        {:text, str} ->
+          Phoenix.HTML.html_escape(str) |> Phoenix.HTML.safe_to_string()
+
+        {:highlight, str} ->
+          "<mark class=\"search-highlight\">#{Phoenix.HTML.html_escape(str) |> Phoenix.HTML.safe_to_string()}</mark>"
       end)
       |> Enum.join()
     )

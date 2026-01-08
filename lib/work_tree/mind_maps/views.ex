@@ -26,7 +26,7 @@ defmodule WorkTree.MindMaps.Views do
       |> where([n], n.is_todo == true)
       |> limit(^limit)
       # Sort by priority (NULL last), then by updated_at desc
-      |> order_by([n], [asc_nulls_last: n.priority, desc: n.updated_at])
+      |> order_by([n], asc_nulls_last: n.priority, desc: n.updated_at)
 
     query =
       if include_completed do
@@ -86,8 +86,10 @@ defmodule WorkTree.MindMaps.Views do
       node.priority || :unset
     end)
     |> Enum.sort_by(fn
-      {:unset, _} -> {1, 999}  # Put unset at the end
-      {priority, _} -> {0, priority}  # Sort by priority number
+      # Put unset at the end
+      {:unset, _} -> {1, 999}
+      # Sort by priority number
+      {priority, _} -> {0, priority}
     end)
     |> Enum.into(%{})
   end
@@ -101,7 +103,7 @@ defmodule WorkTree.MindMaps.Views do
     Node
     |> where([n], n.is_todo == true and n.todo_completed == false)
     |> where([n], n.priority <= 2)
-    |> order_by([n], [asc: n.priority, desc: n.updated_at])
+    |> order_by([n], asc: n.priority, desc: n.updated_at)
     |> limit(^limit)
     |> Repo.all()
   end
@@ -141,7 +143,7 @@ defmodule WorkTree.MindMaps.Views do
 
     Node
     |> where([n], n.depth == ^depth)
-    |> order_by([n], [asc: n.position, asc: n.id])
+    |> order_by([n], asc: n.position, asc: n.id)
     |> limit(^limit)
     |> Repo.all()
   end

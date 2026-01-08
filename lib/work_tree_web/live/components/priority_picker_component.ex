@@ -39,8 +39,7 @@ defmodule WorkTreeWeb.Components.PriorityPickerComponent do
         <div class="priority-picker-header">
           <%= if @batch_mode do %>
             <span class="flex items-center gap-2">
-              Set priority for
-              <span class="badge badge-secondary badge-sm"><%= @batch_count %></span>
+              Set priority for <span class="badge badge-secondary badge-sm">{@batch_count}</span>
               nodes
             </span>
           <% else %>
@@ -59,9 +58,9 @@ defmodule WorkTreeWeb.Components.PriorityPickerComponent do
               phx-click="priority_picker_select"
               phx-value-priority={level}
             >
-              <span class="priority-picker-key"><%= level %></span>
-              <span class={["priority-picker-badge", priority_color(level)]}><%= "P#{level}" %></span>
-              <span class="priority-picker-label"><%= String.replace(label, ~r/^P\d - /, "") %></span>
+              <span class="priority-picker-key">{level}</span>
+              <span class={["priority-picker-badge", priority_color(level)]}>{"P#{level}"}</span>
+              <span class="priority-picker-label">{String.replace(label, ~r/^P\d - /, "")}</span>
               <span
                 :if={!@batch_mode && @focused_node && @focused_node.priority == level}
                 class="priority-picker-current"

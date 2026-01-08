@@ -32,7 +32,11 @@ defmodule WorkTreeWeb.MindMapLive.DeletionHandlers do
       if total_count > 3 and socket.assigns.pending_deletion == nil do
         {:noreply,
          socket
-         |> assign(:pending_deletion, %{node_ids: [node.id], total_count: total_count, single_node: node})}
+         |> assign(:pending_deletion, %{
+           node_ids: [node.id],
+           total_count: total_count,
+           single_node: node
+         })}
       else
         do_single_delete(socket, node)
       end

@@ -69,7 +69,9 @@ defmodule WorkTree.Events do
     snapshot = event.snapshot
 
     node
-    |> Ecto.Changeset.change(Map.take(snapshot, [:title, :body, :is_todo, :todo_completed, :priority, :edge_label]))
+    |> Ecto.Changeset.change(
+      Map.take(snapshot, [:title, :body, :is_todo, :todo_completed, :priority, :edge_label])
+    )
     |> Repo.update()
   end
 

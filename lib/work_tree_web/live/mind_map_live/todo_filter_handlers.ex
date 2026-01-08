@@ -142,15 +142,17 @@ defmodule WorkTreeWeb.MindMapLive.TodoFilterHandlers do
   # Private helpers
 
   defp load_todo_results(socket, scope, show_completed) do
-    all_nodes = case scope do
-      :local -> socket.assigns.nodes
-      :global -> MindMaps.get_all_nodes()
-    end
+    all_nodes =
+      case scope do
+        :local -> socket.assigns.nodes
+        :global -> MindMaps.get_all_nodes()
+      end
 
     # Filter todos based on show_completed setting
-    filtered_todos = Enum.filter(all_nodes, fn node ->
-      node.is_todo && (show_completed || !node.todo_completed)
-    end)
+    filtered_todos =
+      Enum.filter(all_nodes, fn node ->
+        node.is_todo && (show_completed || !node.todo_completed)
+      end)
 
     # Sort by priority (ascending, nil last) then by due date (closest first, nil last)
     sorted_todos = sort_todos(filtered_todos)
@@ -158,25 +160,28 @@ defmodule WorkTreeWeb.MindMapLive.TodoFilterHandlers do
     # Build ancestry for each todo (pass all_nodes to avoid duplicate query)
     ancestry_map = build_ancestry_map(all_nodes, socket.assigns.root.id)
 
-    results = Enum.map(sorted_todos, fn node ->
-      ancestry = Map.get(ancestry_map, node.id, [])
-      {node, ancestry}
-    end)
+    results =
+      Enum.map(sorted_todos, fn node ->
+        ancestry = Map.get(ancestry_map, node.id, [])
+        {node, ancestry}
+      end)
 
     assign(socket, :todo_filter_results, results)
   end
 
   defp sort_todos(todos) do
     Enum.sort_by(todos, fn node ->
-      priority_score = case node.priority do
-        nil -> 999
-        p -> p
-      end
+      priority_score =
+        case node.priority do
+          nil -> 999
+          p -> p
+        end
 
-      due_date_score = case node.due_date do
-        nil -> ~D[9999-12-31]
-        date -> date
-      end
+      due_date_score =
+        case node.due_date do
+          nil -> ~D[9999-12-31]
+          date -> date
+        end
 
       {priority_score, due_date_score}
     end)
@@ -196,6 +201,7 @@ defmodule WorkTreeWeb.MindMapLive.TodoFilterHandlers do
   end
 
   defp get_ancestry_recursive(nil, _nodes_by_id, _root_id, acc), do: Enum.reverse(acc)
+
   defp get_ancestry_recursive(parent_id, nodes_by_id, root_id, acc) do
     case Map.get(nodes_by_id, parent_id) do
       nil ->
@@ -203,6 +209,7 @@ defmodule WorkTreeWeb.MindMapLive.TodoFilterHandlers do
 
       parent ->
         new_acc = [parent.title | acc]
+
         if parent.id == root_id do
           Enum.reverse(new_acc)
         else

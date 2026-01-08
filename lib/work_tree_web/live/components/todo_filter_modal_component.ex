@@ -31,8 +31,19 @@ defmodule WorkTreeWeb.Components.TodoFilterModalComponent do
       >
         <div class="todo-filter-header">
           <div class="todo-filter-title">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+              />
             </svg>
             <span>Todo List</span>
           </div>
@@ -61,8 +72,17 @@ defmodule WorkTreeWeb.Components.TodoFilterModalComponent do
           >
             <span class={["todo-toggle-check", @todo_filter_show_completed && "checked"]}>
               <%= if @todo_filter_show_completed do %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
               <% end %>
             </span>
@@ -76,7 +96,11 @@ defmodule WorkTreeWeb.Components.TodoFilterModalComponent do
         <div class="search-results">
           <%= if @todo_filter_results == [] do %>
             <div class="search-no-results">
-              No <%= if !@todo_filter_show_completed, do: "uncompleted " %>todos in <%= if @todo_filter_scope == :local, do: "current subtree", else: "workspace" %>
+              No {if !@todo_filter_show_completed, do: "uncompleted "}todos in {if @todo_filter_scope ==
+                                                                                     :local,
+                                                                                   do:
+                                                                                     "current subtree",
+                                                                                   else: "workspace"}
             </div>
           <% end %>
 
@@ -112,7 +136,12 @@ defmodule WorkTreeWeb.Components.TodoFilterModalComponent do
     ~H"""
     <button
       type="button"
-      class={["search-result-item", "todo-result-item", @selected && "selected", @node.todo_completed && "completed"]}
+      class={[
+        "search-result-item",
+        "todo-result-item",
+        @selected && "selected",
+        @node.todo_completed && "completed"
+      ]}
       phx-click="todo_filter_go_to_result"
       phx-value-index={@index}
       phx-mouseover={JS.push("todo_filter_select_index", value: %{index: @index})}
@@ -127,10 +156,16 @@ defmodule WorkTreeWeb.Components.TodoFilterModalComponent do
         </div>
       </div>
       <div class="search-result-meta todo-result-meta">
-        <span :if={@node.priority != nil} class={["search-result-priority", Helpers.priority_class(@node.priority, :css)]}>
+        <span
+          :if={@node.priority != nil}
+          class={["search-result-priority", Helpers.priority_class(@node.priority, :css)]}
+        >
           P{@node.priority}
         </span>
-        <span :if={@node.due_date != nil && !@node.todo_completed} class={["todo-result-due-date", Helpers.due_date_class(@node.due_date)]}>
+        <span
+          :if={@node.due_date != nil && !@node.todo_completed}
+          class={["todo-result-due-date", Helpers.due_date_class(@node.due_date)]}
+        >
           {format_days_remaining(@days_remaining)}
         </span>
       </div>

@@ -17,7 +17,7 @@ defmodule WorkTree.Repo.Migrations.AddArchiveToNodes do
 
     # Index for auto-archive query: completed todos older than 7 days
     create index(:nodes, [:is_todo, :todo_completed, :completed_at],
-      where: "is_todo = true AND todo_completed = true AND archived_at IS NULL"
-    )
+             where: "is_todo = true AND todo_completed = true AND archived_at IS NULL"
+           )
   end
 end

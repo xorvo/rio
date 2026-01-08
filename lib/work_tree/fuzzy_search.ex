@@ -66,8 +66,11 @@ defmodule WorkTree.FuzzySearch do
     body_text = extract_body_text(node.body)
     body_lower = String.downcase(body_text)
 
-    {title_score, title_highlights} = score_field(title, title_lower, query_lower, query_chars, :title)
-    {body_score, body_highlights} = score_field(body_text, body_lower, query_lower, query_chars, :body)
+    {title_score, title_highlights} =
+      score_field(title, title_lower, query_lower, query_chars, :title)
+
+    {body_score, body_highlights} =
+      score_field(body_text, body_lower, query_lower, query_chars, :body)
 
     total_score = title_score + body_score
 
@@ -107,6 +110,7 @@ defmodule WorkTree.FuzzySearch do
           {:ok, positions, score} ->
             highlights = positions_to_ranges(positions)
             {round(score * base_multiplier), highlights}
+
           :no_match ->
             {0, []}
         end
@@ -126,6 +130,7 @@ defmodule WorkTree.FuzzySearch do
       [{start, _len}] ->
         # Adjust for the separator character if not at start
         if start > 0, do: start + 1, else: start
+
       _ ->
         0
     end
@@ -152,6 +157,7 @@ defmodule WorkTree.FuzzySearch do
       {:ok, positions} ->
         score = calculate_fuzzy_score(positions, length(text_chars), length(query_chars))
         {:ok, Enum.reverse(positions), score}
+
       :no_match ->
         :no_match
     end
@@ -189,7 +195,7 @@ defmodule WorkTree.FuzzySearch do
     # Bonus for higher match density
     density_bonus =
       if text_length > 0 do
-        round((query_length / text_length) * 10)
+        round(query_length / text_length * 10)
       else
         0
       end
@@ -205,6 +211,7 @@ defmodule WorkTree.FuzzySearch do
       case acc do
         [{start, stop} | rest] when pos == stop ->
           [{start, pos + 1} | rest]
+
         _ ->
           [{pos, pos + 1} | acc]
       end
@@ -213,6 +220,7 @@ defmodule WorkTree.FuzzySearch do
   end
 
   defp extract_body_text(nil), do: ""
+
   defp extract_body_text(body) when is_map(body) do
     case body do
       %{"content" => content} when is_binary(content) -> content
@@ -220,5 +228,6 @@ defmodule WorkTree.FuzzySearch do
       _ -> ""
     end
   end
+
   defp extract_body_text(_), do: ""
 end

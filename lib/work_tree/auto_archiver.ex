@@ -37,8 +37,7 @@ defmodule WorkTree.AutoArchiver do
   end
 
   defp archive_old_completed_todos do
-    cutoff_date = Date.utc_today() |> Date.add(-@archive_after_days)
-    todos = MindMaps.get_auto_archivable_todos(cutoff_date)
+    todos = MindMaps.get_auto_archivable_todos(@archive_after_days)
 
     if length(todos) > 0 do
       MindMaps.archive_nodes(todos)

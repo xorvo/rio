@@ -53,8 +53,7 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Batch mode header --%>
           <li class="menu-title">
             <span class="flex items-center gap-2">
-              <span class="badge badge-secondary badge-sm"><%= @batch_count %></span>
-              nodes selected
+              <span class="badge badge-secondary badge-sm">{@batch_count}</span> nodes selected
             </span>
           </li>
 
@@ -65,8 +64,19 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Batch Make Todo --%>
           <li>
             <button type="button" phx-click="menu_batch_make_todo" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               Make All Todos
             </button>
@@ -75,8 +85,19 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Batch Remove Todo --%>
           <li>
             <button type="button" phx-click="menu_batch_remove_todo" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
               Remove All Todos
             </button>
@@ -85,8 +106,19 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Batch Mark Complete --%>
           <li>
             <button type="button" phx-click="menu_batch_mark_complete" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 text-success"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
               Mark All Complete
             </button>
@@ -95,8 +127,19 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Batch Mark Incomplete --%>
           <li>
             <button type="button" phx-click="menu_batch_mark_incomplete" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 text-warning"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               Mark All Incomplete
             </button>
@@ -106,8 +149,19 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <li>
             <details open={@priority_submenu_open}>
               <summary phx-click="toggle_priority_submenu" phx-target={@myself}>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                  />
                 </svg>
                 Set All Priority
               </summary>
@@ -120,15 +174,26 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
                       phx-value-priority={level}
                       phx-target={@myself}
                     >
-                      <span class={["badge badge-xs", priority_color(level)]}><%= "P#{level}" %></span>
-                      <%= label %>
+                      <span class={["badge badge-xs", priority_color(level)]}>{"P#{level}"}</span>
+                      {label}
                     </button>
                   </li>
                 <% end %>
                 <li class="border-t border-base-content/10 mt-1 pt-1">
                   <button type="button" phx-click="menu_batch_clear_priority" phx-target={@myself}>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                     Clear All Priority
                   </button>
@@ -143,19 +208,50 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
 
           <%!-- Batch Delete --%>
           <li>
-            <button type="button" phx-click="menu_batch_delete" phx-target={@myself} class="text-error hover:bg-error hover:text-error-content">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <button
+              type="button"
+              phx-click="menu_batch_delete"
+              phx-target={@myself}
+              class="text-error hover:bg-error hover:text-error-content"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
-              Delete <%= @batch_count %> nodes
-              <kbd class="kbd kbd-xs ml-auto">Del</kbd>
+              Delete {@batch_count} nodes <kbd class="kbd kbd-xs ml-auto">Del</kbd>
             </button>
           </li>
 
           <li class="border-t border-base-300 mt-2 pt-2">
-            <button type="button" phx-click="menu_clear_selection" phx-target={@myself} class="text-base-content/60">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <button
+              type="button"
+              phx-click="menu_clear_selection"
+              phx-target={@myself}
+              class="text-base-content/60"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
               Clear Selection
             </button>
@@ -165,23 +261,48 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Add Child --%>
           <li>
             <button type="button" phx-click="menu_add_child" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
-              Add Child
-              <kbd class="kbd kbd-xs ml-auto">o</kbd>
+              Add Child <kbd class="kbd kbd-xs ml-auto">o</kbd>
             </button>
           </li>
 
           <%!-- Show Details --%>
           <li>
             <button type="button" phx-click="menu_edit_node" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
               </svg>
-              Show Details
-              <kbd class="kbd kbd-xs ml-auto">v</kbd>
+              Show Details <kbd class="kbd kbd-xs ml-auto">v</kbd>
             </button>
           </li>
 
@@ -193,13 +314,35 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <li>
             <button type="button" phx-click="menu_toggle_todo" phx-target={@myself}>
               <%= if @node.is_todo do %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
                 Remove Todo
               <% else %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 Make Todo
               <% end %>
@@ -211,13 +354,35 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <li :if={@node.is_todo}>
             <button type="button" phx-click="menu_toggle_completed" phx-target={@myself}>
               <%= if @node.todo_completed do %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-warning"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 Mark Incomplete
               <% else %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-success"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 Mark Complete
               <% end %>
@@ -228,13 +393,24 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <li>
             <details open={@priority_submenu_open}>
               <summary phx-click="toggle_priority_submenu" phx-target={@myself}>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                  />
                 </svg>
                 Set Priority
                 <%= if @node.priority do %>
                   <span class={["badge badge-xs ml-1", priority_color(@node.priority)]}>
-                    P<%= @node.priority %>
+                    P{@node.priority}
                   </span>
                 <% end %>
               </summary>
@@ -248,15 +424,26 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
                       phx-target={@myself}
                       class={[@node.priority == level && "active"]}
                     >
-                      <span class={["badge badge-xs", priority_color(level)]}><%= "P#{level}" %></span>
-                      <%= label %>
+                      <span class={["badge badge-xs", priority_color(level)]}>{"P#{level}"}</span>
+                      {label}
                     </button>
                   </li>
                 <% end %>
                 <li :if={@node.priority != nil} class="border-t border-base-content/10 mt-1 pt-1">
                   <button type="button" phx-click="menu_clear_priority" phx-target={@myself}>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                     Clear Priority
                   </button>
@@ -272,10 +459,21 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Add/Edit Link --%>
           <li>
             <button type="button" phx-click="menu_edit_link" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                />
               </svg>
-              <%= if @node.link, do: "Edit Link", else: "Add Link" %>
+              {if @node.link, do: "Edit Link", else: "Add Link"}
               <kbd class="kbd kbd-xs ml-auto">a</kbd>
             </button>
           </li>
@@ -283,11 +481,21 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Open Link (only if link exists) --%>
           <li :if={@node.link}>
             <button type="button" phx-click="menu_open_link" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
               </svg>
-              Open Link
-              <kbd class="kbd kbd-xs ml-auto">g</kbd>
+              Open Link <kbd class="kbd kbd-xs ml-auto">g</kbd>
             </button>
           </li>
 
@@ -298,11 +506,21 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <%!-- Focus Subtree --%>
           <li>
             <button type="button" phx-click="menu_focus_subtree" phx-target={@myself}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                />
               </svg>
-              Focus Subtree
-              <kbd class="kbd kbd-xs ml-auto">f</kbd>
+              Focus Subtree <kbd class="kbd kbd-xs ml-auto">f</kbd>
             </button>
           </li>
 
@@ -314,13 +532,35 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <li>
             <button type="button" phx-click="menu_toggle_lock" phx-target={@myself}>
               <%= if @node.locked do %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-warning"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                  />
                 </svg>
                 Unlock Node
               <% else %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
                 </svg>
                 Lock Node
               <% end %>
@@ -335,37 +575,84 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
           <li :if={!@is_root}>
             <%= if @node.archived_at do %>
               <button type="button" phx-click="menu_unarchive_node" phx-target={@myself}>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4l3-3m0 0l3 3m-3-3v6" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4l3-3m0 0l3 3m-3-3v6"
+                  />
                 </svg>
                 Unarchive
               </button>
             <% else %>
               <button type="button" phx-click="menu_archive_node" phx-target={@myself}>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                  />
                 </svg>
-                Archive
-                <kbd class="kbd kbd-xs ml-auto">z</kbd>
+                Archive <kbd class="kbd kbd-xs ml-auto">z</kbd>
               </button>
             <% end %>
           </li>
 
           <%!-- Delete Node --%>
           <li :if={!@is_root}>
-            <button type="button" phx-click="menu_delete_node" phx-target={@myself} class="text-error hover:bg-error hover:text-error-content">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <button
+              type="button"
+              phx-click="menu_delete_node"
+              phx-target={@myself}
+              class="text-error hover:bg-error hover:text-error-content"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
-              Delete
-              <kbd class="kbd kbd-xs ml-auto">Del</kbd>
+              Delete <kbd class="kbd kbd-xs ml-auto">Del</kbd>
             </button>
           </li>
 
           <li :if={@is_root}>
             <span class="text-base-content/40 cursor-not-allowed">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
               Delete (root)
             </span>
@@ -453,38 +740,71 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
 
   # Batch action handlers
   def handle_event("menu_batch_make_todo", _params, socket) do
-    send(self(), {:context_menu_action, :batch_make_todo, MapSet.to_list(socket.assigns.selected_node_ids)})
+    send(
+      self(),
+      {:context_menu_action, :batch_make_todo, MapSet.to_list(socket.assigns.selected_node_ids)}
+    )
+
     {:noreply, socket}
   end
 
   def handle_event("menu_batch_remove_todo", _params, socket) do
-    send(self(), {:context_menu_action, :batch_remove_todo, MapSet.to_list(socket.assigns.selected_node_ids)})
+    send(
+      self(),
+      {:context_menu_action, :batch_remove_todo, MapSet.to_list(socket.assigns.selected_node_ids)}
+    )
+
     {:noreply, socket}
   end
 
   def handle_event("menu_batch_mark_complete", _params, socket) do
-    send(self(), {:context_menu_action, :batch_mark_complete, MapSet.to_list(socket.assigns.selected_node_ids)})
+    send(
+      self(),
+      {:context_menu_action, :batch_mark_complete,
+       MapSet.to_list(socket.assigns.selected_node_ids)}
+    )
+
     {:noreply, socket}
   end
 
   def handle_event("menu_batch_mark_incomplete", _params, socket) do
-    send(self(), {:context_menu_action, :batch_mark_incomplete, MapSet.to_list(socket.assigns.selected_node_ids)})
+    send(
+      self(),
+      {:context_menu_action, :batch_mark_incomplete,
+       MapSet.to_list(socket.assigns.selected_node_ids)}
+    )
+
     {:noreply, socket}
   end
 
   def handle_event("menu_batch_set_priority", %{"priority" => priority}, socket) do
     priority = String.to_integer(priority)
-    send(self(), {:context_menu_action, :batch_set_priority, MapSet.to_list(socket.assigns.selected_node_ids), priority})
+
+    send(
+      self(),
+      {:context_menu_action, :batch_set_priority,
+       MapSet.to_list(socket.assigns.selected_node_ids), priority}
+    )
+
     {:noreply, socket}
   end
 
   def handle_event("menu_batch_clear_priority", _params, socket) do
-    send(self(), {:context_menu_action, :batch_clear_priority, MapSet.to_list(socket.assigns.selected_node_ids)})
+    send(
+      self(),
+      {:context_menu_action, :batch_clear_priority,
+       MapSet.to_list(socket.assigns.selected_node_ids)}
+    )
+
     {:noreply, socket}
   end
 
   def handle_event("menu_batch_delete", _params, socket) do
-    send(self(), {:context_menu_action, :batch_delete, MapSet.to_list(socket.assigns.selected_node_ids)})
+    send(
+      self(),
+      {:context_menu_action, :batch_delete, MapSet.to_list(socket.assigns.selected_node_ids)}
+    )
+
     {:noreply, socket}
   end
 

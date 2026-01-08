@@ -127,6 +127,7 @@ defmodule WorkTree.Repo.Migrations.ConvertToUuid do
     alter table(:nodes) do
       remove :path
     end
+
     rename table(:nodes), :path_new, to: :path
 
     # Step 12: Add GIN index on path array for fast lookups

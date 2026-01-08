@@ -59,7 +59,10 @@ defmodule WorkTreeWeb.MindMapLive.SearchHandlers do
 
       # Get global nodes (excluding local subtree)
       all_nodes = MindMaps.get_all_nodes()
-      global_nodes = Enum.reject(all_nodes, fn node -> MapSet.member?(local_node_ids, node.id) end)
+
+      global_nodes =
+        Enum.reject(all_nodes, fn node -> MapSet.member?(local_node_ids, node.id) end)
+
       global_ancestry_map = FuzzySearch.build_ancestry_map(global_nodes)
       global_results = FuzzySearch.search(global_nodes, query, ancestry_map: global_ancestry_map)
 

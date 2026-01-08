@@ -41,8 +41,7 @@ defmodule WorkTreeWeb.Components.DueDatePickerComponent do
         <div class="due-date-picker-header">
           <%= if @batch_mode do %>
             <span class="flex items-center gap-2">
-              Set due date for
-              <span class="badge badge-secondary badge-sm"><%= @batch_count %></span>
+              Set due date for <span class="badge badge-secondary badge-sm">{@batch_count}</span>
               nodes
             </span>
           <% else %>
@@ -79,9 +78,9 @@ defmodule WorkTreeWeb.Components.DueDatePickerComponent do
                 phx-click="due_date_picker_select"
                 phx-value-option={key}
               >
-                <span class="due-date-picker-key"><%= key %></span>
-                <span class="due-date-picker-label"><%= label %></span>
-                <span class="due-date-picker-description"><%= description %></span>
+                <span class="due-date-picker-key">{key}</span>
+                <span class="due-date-picker-label">{label}</span>
+                <span class="due-date-picker-description">{description}</span>
               </button>
             <% end %>
 

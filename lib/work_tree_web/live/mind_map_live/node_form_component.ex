@@ -21,7 +21,6 @@ defmodule WorkTreeWeb.MindMapLive.NodeFormComponent do
         phx-submit="save"
         class="space-y-6"
       >
-
         <div>
           <div class="border border-base-300 rounded-lg overflow-hidden">
             <div class="flex gap-0 bg-base-200 border-b border-base-300">

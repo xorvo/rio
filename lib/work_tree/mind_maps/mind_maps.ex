@@ -16,7 +16,12 @@ defmodule WorkTree.MindMaps do
   This is the entry point for the entire mind map tree.
   """
   def get_or_create_global_root do
-    case Repo.one(from n in Node, where: is_nil(n.parent_id) and is_nil(n.deleted_at), order_by: n.id, limit: 1) do
+    case Repo.one(
+           from n in Node,
+             where: is_nil(n.parent_id) and is_nil(n.deleted_at),
+             order_by: n.id,
+             limit: 1
+         ) do
       nil ->
         {:ok, root} = create_root_node(%{"title" => "Mind Map"})
         root
@@ -126,12 +131,14 @@ defmodule WorkTree.MindMaps do
     Repo.transaction(fn ->
       {:ok, node} =
         %Node{}
-        |> changeset_fn.(Map.merge(attrs, %{
-          "parent_id" => parent.id,
-          "path" => [],
-          "position" => position,
-          "depth" => depth
-        }))
+        |> changeset_fn.(
+          Map.merge(attrs, %{
+            "parent_id" => parent.id,
+            "path" => [],
+            "position" => position,
+            "depth" => depth
+          })
+        )
         |> Repo.insert()
 
       node =
@@ -212,7 +219,10 @@ defmodule WorkTree.MindMaps do
         |> Repo.update_all(set: [deleted_at: now, deletion_batch_id: batch_id])
 
         # Record deletion event for the root node
-        Events.record_event(node, "soft_deleted", %{batch_id: batch_id, descendant_count: descendant_count})
+        Events.record_event(node, "soft_deleted", %{
+          batch_id: batch_id,
+          descendant_count: descendant_count
+        })
 
         %{batch_id: batch_id, descendant_count: descendant_count}
       end)
@@ -285,7 +295,10 @@ defmodule WorkTree.MindMaps do
       from(n in Node, where: n.id == ^node.id)
       |> Repo.update_all(set: [archived_at: now, archive_batch_id: batch_id])
 
-      Events.record_event(node, "archived", %{batch_id: batch_id, descendant_count: descendant_count})
+      Events.record_event(node, "archived", %{
+        batch_id: batch_id,
+        descendant_count: descendant_count
+      })
 
       %{batch_id: batch_id, descendant_count: descendant_count}
     end)

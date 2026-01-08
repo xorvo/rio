@@ -42,7 +42,24 @@ defmodule WorkTree.MindMaps.Node do
   @doc false
   def changeset(node, attrs) do
     node
-    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :completed_at, :locked, :archived_at, :archive_batch_id])
+    |> cast(attrs, [
+      :title,
+      :body,
+      :is_todo,
+      :todo_completed,
+      :path,
+      :position,
+      :depth,
+      :edge_label,
+      :parent_id,
+      :priority,
+      :link,
+      :due_date,
+      :completed_at,
+      :locked,
+      :archived_at,
+      :archive_batch_id
+    ])
     |> validate_required([:title, :path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)
@@ -54,7 +71,24 @@ defmodule WorkTree.MindMaps.Node do
   """
   def inline_changeset(node, attrs) do
     node
-    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :completed_at, :locked, :archived_at, :archive_batch_id])
+    |> cast(attrs, [
+      :title,
+      :body,
+      :is_todo,
+      :todo_completed,
+      :path,
+      :position,
+      :depth,
+      :edge_label,
+      :parent_id,
+      :priority,
+      :link,
+      :due_date,
+      :completed_at,
+      :locked,
+      :archived_at,
+      :archive_batch_id
+    ])
     |> validate_required([:path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)
@@ -72,16 +106,23 @@ defmodule WorkTree.MindMaps.Node do
   defp validate_url(changeset, field) do
     validate_change(changeset, field, fn _field, value ->
       case value do
-        nil -> []
-        "" -> []
+        nil ->
+          []
+
+        "" ->
+          []
+
         url when is_binary(url) ->
           uri = URI.parse(url)
+
           if uri.scheme in ["http", "https"] and uri.host not in [nil, ""] do
             []
           else
             [{field, "must be a valid URL starting with http:// or https://"}]
           end
-        _ -> [{field, "must be a string"}]
+
+        _ ->
+          [{field, "must be a string"}]
       end
     end)
   end

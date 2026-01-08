@@ -75,7 +75,7 @@ defmodule WorkTree.MindMaps.Search do
       Node
       |> where([n], n.is_todo == true)
       |> limit(^limit)
-      |> order_by([n], [asc: n.priority, desc: n.updated_at])
+      |> order_by([n], asc: n.priority, desc: n.updated_at)
 
     base_query =
       if include_completed do

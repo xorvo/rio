@@ -59,8 +59,8 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
     end
   end
 
-  # 'v' to view details
-  def handle_key(socket, %{"key" => "v"}, _opts) do
+  # Space to view details
+  def handle_key(socket, %{"key" => " "}, _opts) do
     node = Enum.find(socket.assigns.nodes, &(&1.id == socket.assigns.focused_node_id))
     {:noreply, assign(socket, :selected_node, node)}
   end
@@ -166,8 +166,7 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
   def handle_key(socket, %{"key" => "c"}, _opts) do
     focused_id = socket.assigns.focused_node_id
 
-    {:noreply,
-     Phoenix.LiveView.push_event(socket, "center-node", %{id: focused_id})}
+    {:noreply, Phoenix.LiveView.push_event(socket, "center-node", %{id: focused_id})}
   end
 
   # 'a' to attach/edit link (quick inline input)
@@ -188,8 +187,8 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
      Phoenix.LiveView.push_event(socket, "open-focused-node-link", %{node_id: focused_id})}
   end
 
-  # Space to toggle hints expansion
-  def handle_key(socket, %{"key" => " "}, _opts) do
+  # '?' to toggle hints expansion
+  def handle_key(socket, %{"key" => "?"}, _opts) do
     {:noreply, assign(socket, :hints_expanded, !socket.assigns.hints_expanded)}
   end
 

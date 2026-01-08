@@ -49,7 +49,8 @@ defmodule WorkTreeWeb.MindMapLive.ArchiveHandlers do
 
       %{batch_id: batch_id} = archive_info ->
         # Cancel the timer
-        if socket.assigns.archive_undo_timer, do: Process.cancel_timer(socket.assigns.archive_undo_timer)
+        if socket.assigns.archive_undo_timer,
+          do: Process.cancel_timer(socket.assigns.archive_undo_timer)
 
         # Restore all nodes in the archive batch
         {:ok, _count} = MindMaps.restore_archive_batch(batch_id)
@@ -70,7 +71,8 @@ defmodule WorkTreeWeb.MindMapLive.ArchiveHandlers do
   Dismisses the undo toast without restoring.
   """
   def dismiss_archive_undo(socket) do
-    if socket.assigns.archive_undo_timer, do: Process.cancel_timer(socket.assigns.archive_undo_timer)
+    if socket.assigns.archive_undo_timer,
+      do: Process.cancel_timer(socket.assigns.archive_undo_timer)
 
     {:noreply,
      socket
@@ -113,7 +115,8 @@ defmodule WorkTreeWeb.MindMapLive.ArchiveHandlers do
 
   defp do_archive(socket, node) do
     # Cancel any existing undo timer
-    if socket.assigns.archive_undo_timer, do: Process.cancel_timer(socket.assigns.archive_undo_timer)
+    if socket.assigns.archive_undo_timer,
+      do: Process.cancel_timer(socket.assigns.archive_undo_timer)
 
     # Perform archive
     {:ok, %{batch_id: batch_id, descendant_count: descendant_count}} = MindMaps.archive_node(node)

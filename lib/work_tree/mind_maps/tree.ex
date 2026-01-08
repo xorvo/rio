@@ -29,8 +29,10 @@ defmodule WorkTree.MindMaps.Tree do
     include_deleted = Keyword.get(opts, :include_deleted, false)
 
     # Cast the id to uuid explicitly for the ANY() array comparison
-    query = from(n in Node,
-      where: type(^id, Ecto.UUID) == fragment("ANY(?)", n.path) and n.id != ^id)
+    query =
+      from(n in Node,
+        where: type(^id, Ecto.UUID) == fragment("ANY(?)", n.path) and n.id != ^id
+      )
 
     if include_deleted do
       query
