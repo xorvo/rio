@@ -218,6 +218,19 @@ defmodule WorkTreeWeb.MindMapLive.KeyboardHandlers do
     {:noreply, assign(socket, :due_date_picker_open, true)}
   end
 
+  # 'z' to archive focused node
+  def handle_key(socket, %{"key" => "z"}, opts) do
+    archive_fn = Keyword.fetch!(opts, :archive_fn)
+    focused_id = socket.assigns.focused_node_id
+    node = Enum.find(socket.assigns.nodes, &(&1.id == focused_id))
+
+    if node do
+      archive_fn.(socket, node)
+    else
+      {:noreply, socket}
+    end
+  end
+
   # Ignore tab
   def handle_key(socket, %{"key" => "Tab"}, _opts), do: {:noreply, socket}
 

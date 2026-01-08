@@ -10,6 +10,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     Helpers,
     SearchHandlers,
     DeletionHandlers,
+    ArchiveHandlers,
     InlineEditHandlers,
     LinkHandlers,
     DragHandlers,
@@ -18,58 +19,77 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   @impl true
   def mount(params, _session, socket) do
-    root = get_root_node(params)
-    tree = MindMaps.get_subtree(root)
-    node_positions = Layout.calculate_positions(tree)
-    edges = Layout.calculate_edges(tree, node_positions)
-    nodes = Layout.flatten_tree(tree)
-    {_min_x, _min_y, max_x, max_y} = Layout.bounding_box(node_positions)
+    case get_root_node(params) do
+      {:error, :not_found} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Node not found")
+         |> push_navigate(to: ~p"/")}
 
-    {:ok,
-     socket
-     |> assign(:root, root)
-     |> assign(:tree, tree)
-     |> assign(:node_positions, node_positions)
-     |> assign(:edges, edges)
-     |> assign(:nodes, nodes)
-     |> assign(:canvas_width, max_x + 100)
-     |> assign(:canvas_height, max_y + 100)
-     |> assign(:focused_node_id, root.id)
-     |> assign(:selected_node, nil)
-     |> assign(:ancestors, MindMaps.get_ancestors(root))
-     |> assign(:page_title, root.title)
-     |> assign(:deletion_batch, nil)
-     |> assign(:undo_timer, nil)
-     |> assign(:editing_node_id, nil)
-     |> assign(:link_edit_node, nil)
-     |> assign(:context_menu, nil)
-     |> assign(:hints_expanded, false)
-     |> assign(:search_open, false)
-     |> assign(:search_query, "")
-     |> assign(:search_results, [])
-     |> assign(:global_search_results, [])
-     |> assign(:search_selected_index, 0)
-     |> assign(:selected_node_ids, MapSet.new())
-     |> assign(:pending_deletion, nil)
-     |> assign(:dragging_node, nil)
-     |> assign(:drag_target_id, nil)
-     |> assign(:pending_move, nil)
-     |> assign(:move_undo_info, nil)
-     |> assign(:move_undo_timer, nil)
-     |> assign(:priority_picker_open, false)
-     |> assign(:due_date_picker_open, false)
-     |> assign(:due_date_custom_mode, false)
-     |> assign(:link_input_open, false)
-     |> assign(:link_input_node, nil)
-     |> assign(:todo_filter_open, false)
-     |> assign(:todo_filter_results, [])
-     |> assign(:todo_filter_selected_index, 0)
-     |> assign(:todo_filter_scope, :local)
-     |> assign(:todo_filter_show_completed, false)}
+      {:ok, root} ->
+        tree = MindMaps.get_subtree(root)
+        node_positions = Layout.calculate_positions(tree)
+        edges = Layout.calculate_edges(tree, node_positions)
+        nodes = Layout.flatten_tree(tree)
+        {_min_x, _min_y, max_x, max_y} = Layout.bounding_box(node_positions)
+
+        {:ok,
+         socket
+         |> assign(:root, root)
+         |> assign(:tree, tree)
+         |> assign(:node_positions, node_positions)
+         |> assign(:edges, edges)
+         |> assign(:nodes, nodes)
+         |> assign(:canvas_width, max_x + 100)
+         |> assign(:canvas_height, max_y + 100)
+         |> assign(:focused_node_id, root.id)
+         |> assign(:selected_node, nil)
+         |> assign(:ancestors, MindMaps.get_ancestors(root))
+         |> assign(:page_title, root.title)
+         |> assign(:deletion_batch, nil)
+         |> assign(:undo_timer, nil)
+         |> assign(:editing_node_id, nil)
+         |> assign(:link_edit_node, nil)
+         |> assign(:context_menu, nil)
+         |> assign(:hints_expanded, false)
+         |> assign(:search_open, false)
+         |> assign(:search_query, "")
+         |> assign(:search_results, [])
+         |> assign(:global_search_results, [])
+         |> assign(:search_selected_index, 0)
+         |> assign(:selected_node_ids, MapSet.new())
+         |> assign(:pending_deletion, nil)
+         |> assign(:dragging_node, nil)
+         |> assign(:drag_target_id, nil)
+         |> assign(:pending_move, nil)
+         |> assign(:move_undo_info, nil)
+         |> assign(:move_undo_timer, nil)
+         |> assign(:priority_picker_open, false)
+         |> assign(:due_date_picker_open, false)
+         |> assign(:due_date_custom_mode, false)
+         |> assign(:link_input_open, false)
+         |> assign(:link_input_node, nil)
+         |> assign(:todo_filter_open, false)
+         |> assign(:todo_filter_results, [])
+         |> assign(:todo_filter_selected_index, 0)
+         |> assign(:todo_filter_scope, :local)
+         |> assign(:todo_filter_show_completed, false)
+         # Archive-related assigns
+         |> assign(:show_archived, false)
+         |> assign(:pending_archive, nil)
+         |> assign(:archive_batch, nil)
+         |> assign(:archive_undo_timer, nil)}
+    end
   end
 
-  defp get_root_node(%{"id" => id}), do: MindMaps.get_node!(id)
-  defp get_root_node(_), do: MindMaps.get_or_create_global_root()
+  defp get_root_node(%{"id" => id}) do
+    case MindMaps.get_node(id) do
+      nil -> {:error, :not_found}
+      node -> {:ok, node}
+    end
+  end
+
+  defp get_root_node(_), do: {:ok, MindMaps.get_or_create_global_root()}
 
   @impl true
   def handle_params(params, _url, socket) do
@@ -179,8 +199,33 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_event("confirm_delete", _, socket), do: DeletionHandlers.confirm_delete(socket)
   def handle_event("cancel_delete", _, socket), do: DeletionHandlers.cancel_delete(socket)
 
+  # Archive events - delegate to ArchiveHandlers
+  def handle_event("archive_node", %{"id" => id}, socket) do
+    node = MindMaps.get_node!(id)
+    ArchiveHandlers.archive_node_with_undo(socket, node)
+  end
+
+  def handle_event("undo_archive", _, socket), do: ArchiveHandlers.undo_archive(socket)
+  def handle_event("dismiss_archive_undo", _, socket), do: ArchiveHandlers.dismiss_archive_undo(socket)
+  def handle_event("confirm_archive", _, socket), do: ArchiveHandlers.confirm_archive(socket)
+  def handle_event("cancel_archive", _, socket), do: ArchiveHandlers.cancel_archive(socket)
+
+  def handle_event("toggle_show_archived", _, socket) do
+    new_show_archived = !socket.assigns.show_archived
+
+    {:noreply,
+     socket
+     |> assign(:show_archived, new_show_archived)
+     |> reload_tree()}
+  end
+
   def handle_event("focus_subtree", %{"id" => id}, socket) do
     {:noreply, push_navigate(socket, to: ~p"/node/#{id}")}
+  end
+
+  def handle_event("keydown", %{"isInputTarget" => true}, socket) do
+    # Ignore keyboard events that originated from input/textarea elements
+    {:noreply, socket}
   end
 
   def handle_event("keydown", event, socket) do
@@ -202,6 +247,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
       KeyboardHandlers.handle_key(socket, event,
         delete_fn: &DeletionHandlers.delete_node_with_undo/2,
         batch_delete_fn: &DeletionHandlers.batch_delete_nodes/2,
+        archive_fn: &ArchiveHandlers.archive_node_with_undo/2,
         reload_fn: &reload_tree/1
       )
     end
@@ -552,6 +598,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
 
   def handle_info(:clear_undo, socket), do: DeletionHandlers.handle_clear_undo(socket)
   def handle_info(:clear_move_undo, socket), do: DragHandlers.handle_clear_move_undo(socket)
+  def handle_info(:clear_archive_undo, socket), do: ArchiveHandlers.handle_clear_archive_undo(socket)
 
   # Context menu action handlers
   def handle_info({:close_context_menu, _}, socket) do
@@ -654,6 +701,20 @@ defmodule WorkTreeWeb.MindMapLive.Show do
   def handle_info({:context_menu_action, :delete_node, node}, socket) do
     socket = assign(socket, :context_menu, nil)
     DeletionHandlers.delete_node_with_undo(socket, node)
+  end
+
+  def handle_info({:context_menu_action, :archive_node, node}, socket) do
+    socket = assign(socket, :context_menu, nil)
+    ArchiveHandlers.archive_node_with_undo(socket, node)
+  end
+
+  def handle_info({:context_menu_action, :unarchive_node, node}, socket) do
+    {:ok, _} = MindMaps.unarchive_node(node)
+
+    {:noreply,
+     socket
+     |> assign(:context_menu, nil)
+     |> reload_tree()}
   end
 
   # Batch action handlers from context menu

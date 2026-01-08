@@ -267,6 +267,101 @@ defmodule WorkTree.MindMaps do
     {:ok, count}
   end
 
+  # Archive operations
+
+  @doc """
+  Archives a node (only marks the root, subtree is implicitly hidden).
+  Returns {:ok, %{batch_id, descendant_count}}.
+  """
+  def archive_node(%Node{} = node) do
+    batch_id = Ecto.UUID.generate()
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    # Count descendants for the undo message (but don't mark them as archived)
+    descendant_count = count_descendants(node)
+
+    Repo.transaction(fn ->
+      # Only archive the root node - descendants are implicitly hidden
+      from(n in Node, where: n.id == ^node.id)
+      |> Repo.update_all(set: [archived_at: now, archive_batch_id: batch_id])
+
+      Events.record_event(node, "archived", %{batch_id: batch_id, descendant_count: descendant_count})
+
+      %{batch_id: batch_id, descendant_count: descendant_count}
+    end)
+  end
+
+  @doc """
+  Unarchives a node by clearing archived_at.
+  """
+  def unarchive_node(%Node{} = node) do
+    result =
+      node
+      |> Node.changeset(%{archived_at: nil, archive_batch_id: nil})
+      |> Repo.update()
+
+    case result do
+      {:ok, updated_node} ->
+        Events.record_event(updated_node, "unarchived")
+        {:ok, updated_node}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+  Restores all nodes in an archive batch (undo operation).
+  Returns {:ok, count} with number of restored nodes.
+  """
+  def restore_archive_batch(batch_id) do
+    {count, _} =
+      from(n in Node, where: n.archive_batch_id == ^batch_id)
+      |> Repo.update_all(set: [archived_at: nil, archive_batch_id: nil])
+
+    {:ok, count}
+  end
+
+  @doc """
+  Gets completed todos that should be auto-archived (completed > N days ago).
+  """
+  def get_auto_archivable_todos(days_threshold \\ 7) do
+    cutoff = DateTime.utc_now() |> DateTime.add(-days_threshold, :day)
+
+    from(n in Node,
+      where:
+        n.is_todo == true and
+          n.todo_completed == true and
+          is_nil(n.archived_at) and
+          is_nil(n.deleted_at) and
+          not is_nil(n.completed_at) and
+          n.completed_at < ^cutoff
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Batch archive multiple nodes (for auto-archive).
+  Returns {:ok, %{batch_id, count}}.
+  """
+  def archive_nodes(nodes) when is_list(nodes) do
+    if nodes == [] do
+      {:ok, %{batch_id: nil, count: 0}}
+    else
+      batch_id = Ecto.UUID.generate()
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      Repo.transaction(fn ->
+        node_ids = Enum.map(nodes, & &1.id)
+
+        from(n in Node, where: n.id in ^node_ids)
+        |> Repo.update_all(set: [archived_at: now, archive_batch_id: batch_id])
+
+        %{batch_id: batch_id, count: length(nodes)}
+      end)
+    end
+  end
+
   @doc """
   Counts descendants of a node (excluding soft-deleted).
   """
@@ -321,22 +416,52 @@ defmodule WorkTree.MindMaps do
   @doc """
   Gets the full subtree rooted at a node.
   Returns a nested structure.
+
+  Options:
+    - :show_archived - if true, includes archived nodes (default: false)
   """
-  def get_subtree(node_id) when is_binary(node_id) do
+  def get_subtree(node_or_id, opts \\ [])
+
+  def get_subtree(node_id, opts) when is_binary(node_id) do
     root = get_node!(node_id)
-    get_subtree(root)
+    get_subtree(root, opts)
   end
 
-  def get_subtree(%Node{} = root) do
+  def get_subtree(%Node{} = root, opts) do
+    show_archived = Keyword.get(opts, :show_archived, false)
+
     descendants =
       Tree.descendants_query(root)
       |> order_by([n], [n.depth, n.position])
       |> Repo.all()
 
-    all_nodes = [root | descendants]
+    # Filter out archived subtrees unless show_archived is true
+    filtered_descendants =
+      if show_archived do
+        descendants
+      else
+        filter_archived_subtrees(descendants)
+      end
+
+    all_nodes = [root | filtered_descendants]
     nodes_by_parent = Enum.group_by(all_nodes, & &1.parent_id)
 
     Tree.build_subtree(root, nodes_by_parent)
+  end
+
+  # Filter out nodes that are archived or whose ancestor is archived
+  defp filter_archived_subtrees(nodes) do
+    # Find all archived node IDs
+    archived_ids =
+      nodes
+      |> Enum.filter(& &1.archived_at)
+      |> MapSet.new(& &1.id)
+
+    # Reject nodes that are archived or have an archived ancestor in their path
+    Enum.reject(nodes, fn node ->
+      node.archived_at != nil or
+        Enum.any?(node.path, &MapSet.member?(archived_ids, &1))
+    end)
   end
 
   @doc """

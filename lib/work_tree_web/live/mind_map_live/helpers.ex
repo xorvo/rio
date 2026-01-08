@@ -218,10 +218,12 @@ defmodule WorkTreeWeb.MindMapLive.Helpers do
   @doc """
   Reloads the tree data and recalculates layout.
   Used after any operation that modifies the tree structure.
+  Respects the :show_archived setting from socket assigns.
   """
   def reload_tree(socket) do
     root = MindMaps.get_node!(socket.assigns.root.id)
-    tree = MindMaps.get_subtree(root)
+    show_archived = Map.get(socket.assigns, :show_archived, false)
+    tree = MindMaps.get_subtree(root, show_archived: show_archived)
     node_positions = Layout.calculate_positions(tree)
     edges = Layout.calculate_edges(tree, node_positions)
     nodes = Layout.flatten_tree(tree)

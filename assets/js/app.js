@@ -53,6 +53,11 @@ const Hooks = {
         }
       });
     },
+    destroyed() {
+      // Return focus to the canvas container for keyboard shortcuts
+      const container = document.getElementById("mind-map-container");
+      container?.focus();
+    },
   },
   DisableTab: {
     mounted() {
@@ -378,6 +383,9 @@ const Hooks = {
           metaKey: this.mouseDownMetaKey || false,
           ctrlKey: this.mouseDownCtrlKey || false,
         });
+        // Focus the canvas container for keyboard shortcuts
+        const container = document.getElementById("mind-map-container");
+        container?.focus();
       }
       this.cleanup();
     },
@@ -810,6 +818,9 @@ const Hooks = {
       this.canvas = this.el.querySelector("#mind-map-canvas");
       this.rootId = this.el.dataset.rootId;
 
+      // Focus the container on initial load for keyboard shortcuts
+      this.el.focus();
+
       // Handle Cmd+P / Ctrl+P to open search (need to prevent browser print dialog)
       this.handleCmdP = (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === "p") {
@@ -975,6 +986,11 @@ const Hooks = {
         e.target.tagName === "svg" ||
         e.target.tagName === "path" ||
         e.target.tagName === "g";
+
+      // Focus the container when clicking on the canvas area for keyboard shortcuts
+      if (isEmptySpace) {
+        this.el.focus();
+      }
 
       // Middle mouse button or left click on empty space = start panning
       if (e.button === 1 || (e.button === 0 && isEmptySpace)) {
@@ -1304,10 +1320,13 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: { ...colocatedHooks, ...Hooks },
   metadata: {
     keydown: (e, el) => {
+      // Check if event originated from an input element
+      const isInputTarget = e.target?.matches?.("input, textarea, [contenteditable]");
       return {
         key: e.key,
         metaKey: e.metaKey,
         repeat: e.repeat,
+        isInputTarget: isInputTarget,
       };
     },
   },

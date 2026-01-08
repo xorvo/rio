@@ -5,6 +5,7 @@ defmodule WorkTreeWeb.Components.ToolbarComponent do
   use WorkTreeWeb, :html
 
   attr :ancestors, :list, required: true
+  attr :show_archived, :boolean, default: false
 
   def toolbar(assigns) do
     ~H"""
@@ -13,9 +14,40 @@ defmodule WorkTreeWeb.Components.ToolbarComponent do
         <span class="text-lg">←</span> Home
       </.link>
       <div class="flex-1"></div>
+      <.archive_toggle_button show_archived={@show_archived} />
       <.todo_filter_button />
       <.theme_selector />
     </div>
+    """
+  end
+
+  attr :show_archived, :boolean, required: true
+
+  defp archive_toggle_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      class={["btn btn-ghost btn-sm gap-1", @show_archived && "btn-active"]}
+      phx-click="toggle_show_archived"
+      title={if @show_archived, do: "Hide archived items", else: "Show archived items"}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+        />
+      </svg>
+      <span :if={@show_archived}>Hide Archived</span>
+      <span :if={!@show_archived}>Archived</span>
+    </button>
     """
   end
 

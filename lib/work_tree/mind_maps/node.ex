@@ -28,6 +28,9 @@ defmodule WorkTree.MindMaps.Node do
     # Soft delete fields
     field :deleted_at, :utc_datetime
     field :deletion_batch_id, Ecto.UUID
+    # Archive fields
+    field :archived_at, :utc_datetime
+    field :archive_batch_id, Ecto.UUID
 
     belongs_to :parent, __MODULE__
     has_many :children, __MODULE__, foreign_key: :parent_id
@@ -39,7 +42,7 @@ defmodule WorkTree.MindMaps.Node do
   @doc false
   def changeset(node, attrs) do
     node
-    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :completed_at, :locked])
+    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :completed_at, :locked, :archived_at, :archive_batch_id])
     |> validate_required([:title, :path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)
@@ -51,7 +54,7 @@ defmodule WorkTree.MindMaps.Node do
   """
   def inline_changeset(node, attrs) do
     node
-    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :completed_at, :locked])
+    |> cast(attrs, [:title, :body, :is_todo, :todo_completed, :path, :position, :depth, :edge_label, :parent_id, :priority, :link, :due_date, :completed_at, :locked, :archived_at, :archive_batch_id])
     |> validate_required([:path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)

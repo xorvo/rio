@@ -1,6 +1,6 @@
 defmodule WorkTreeWeb.Components.ToastComponent do
   @moduledoc """
-  Toast components for deletion confirmation and undo notifications.
+  Toast components for deletion, archive, and move confirmation and undo notifications.
   """
   use WorkTreeWeb, :html
 
@@ -96,6 +96,74 @@ defmodule WorkTreeWeb.Components.ToastComponent do
           Undo
         </button>
         <button phx-click="dismiss_move_undo" class="btn btn-sm btn-ghost">
+          Dismiss
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :pending_archive, :map, default: nil
+
+  def archive_confirmation_toast(assigns) do
+    ~H"""
+    <div
+      :if={@pending_archive}
+      class="mind-map-undo-toast"
+      phx-mounted={
+        JS.transition(
+          {"ease-out duration-300", "opacity-0 translate-y-4", "opacity-100 translate-y-0"}
+        )
+      }
+    >
+      <span class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+        </svg>
+        Archive {@pending_archive.total_count} nodes?
+      </span>
+      <div class="flex gap-2">
+        <button phx-click="confirm_archive" class="btn btn-sm btn-warning">
+          Archive
+        </button>
+        <button phx-click="cancel_archive" class="btn btn-sm btn-ghost">
+          Cancel
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :archive_batch, :map, default: nil
+
+  def archive_undo_toast(assigns) do
+    ~H"""
+    <div
+      :if={@archive_batch}
+      class="mind-map-undo-toast"
+      phx-mounted={
+        JS.transition(
+          {"ease-out duration-300", "opacity-0 translate-y-4", "opacity-100 translate-y-0"}
+        )
+      }
+    >
+      <span class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+        </svg>
+        Archived "{@archive_batch.title}"
+        <span
+          :if={@archive_batch.descendant_count && @archive_batch.descendant_count > 0}
+          class="text-base-content/60"
+        >
+          (+{@archive_batch.descendant_count} children)
+        </span>
+      </span>
+      <div class="flex gap-2">
+        <button phx-click="undo_archive" class="btn btn-sm btn-primary">
+          Undo
+        </button>
+        <button phx-click="dismiss_archive_undo" class="btn btn-sm btn-ghost">
           Dismiss
         </button>
       </div>

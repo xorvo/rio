@@ -12,8 +12,8 @@ defmodule WorkTree.Application do
       WorkTree.Repo,
       {DNSCluster, query: Application.get_env(:work_tree, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: WorkTree.PubSub},
-      # Start a worker by calling: WorkTree.Worker.start_link(arg)
-      # {WorkTree.Worker, arg},
+      # Auto-archive completed todos after X days
+      WorkTree.AutoArchiver,
       # Start to serve requests, typically the last entry
       WorkTreeWeb.Endpoint
     ]

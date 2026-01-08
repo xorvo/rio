@@ -2,7 +2,8 @@
 <div
   id="mind-map-container"
   class="mind-map-container"
-  phx-window-keydown="keydown"
+  tabindex="0"
+  phx-keydown="keydown"
   phx-hook="MindMapCanvas"
   data-root-id={@root.id}
 >
@@ -23,7 +24,7 @@
   </div>
 
   <%!-- Toolbar --%>
-  <WorkTreeWeb.Components.ToolbarComponent.toolbar ancestors={@ancestors} />
+  <WorkTreeWeb.Components.ToolbarComponent.toolbar ancestors={@ancestors} show_archived={@show_archived} />
 
   <%!-- Canvas --%>
   <div
@@ -80,7 +81,8 @@
           node.is_todo && "todo",
           node.is_todo && node.todo_completed && "completed",
           @editing_node_id == node.id && "editing",
-          node.id == @root.id && "is-root"
+          node.id == @root.id && "is-root",
+          node.archived_at != nil && "archived"
         ]}
         style={"left: #{pos.x}px; top: #{pos.y}px; width: #{pos.width}px; height: #{pos.height}px;"}
         phx-hook="NodeDrag"
@@ -256,6 +258,12 @@
 
   <%!-- Move locked node confirmation modal --%>
   <WorkTreeWeb.Components.ToastComponent.move_confirmation_modal pending_move={@pending_move} />
+
+  <%!-- Archive confirmation toast --%>
+  <WorkTreeWeb.Components.ToastComponent.archive_confirmation_toast pending_archive={@pending_archive} />
+
+  <%!-- Archive undo toast notification --%>
+  <WorkTreeWeb.Components.ToastComponent.archive_undo_toast archive_batch={@archive_batch} />
 </div>
 
 <%!-- Node detail modal --%>

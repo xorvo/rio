@@ -331,6 +331,26 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
             <span>Danger</span>
           </li>
 
+          <%!-- Archive/Unarchive Node --%>
+          <li :if={!@is_root}>
+            <%= if @node.archived_at do %>
+              <button type="button" phx-click="menu_unarchive_node" phx-target={@myself}>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4l3-3m0 0l3 3m-3-3v6" />
+                </svg>
+                Unarchive
+              </button>
+            <% else %>
+              <button type="button" phx-click="menu_archive_node" phx-target={@myself}>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                Archive
+                <kbd class="kbd kbd-xs ml-auto">z</kbd>
+              </button>
+            <% end %>
+          </li>
+
           <%!-- Delete Node --%>
           <li :if={!@is_root}>
             <button type="button" phx-click="menu_delete_node" phx-target={@myself} class="text-error hover:bg-error hover:text-error-content">
@@ -470,6 +490,16 @@ defmodule WorkTreeWeb.Components.ContextMenuComponent do
 
   def handle_event("menu_clear_selection", _params, socket) do
     send(self(), {:context_menu_action, :clear_selection})
+    {:noreply, socket}
+  end
+
+  def handle_event("menu_archive_node", _params, socket) do
+    send(self(), {:context_menu_action, :archive_node, socket.assigns.node})
+    {:noreply, socket}
+  end
+
+  def handle_event("menu_unarchive_node", _params, socket) do
+    send(self(), {:context_menu_action, :unarchive_node, socket.assigns.node})
     {:noreply, socket}
   end
 
