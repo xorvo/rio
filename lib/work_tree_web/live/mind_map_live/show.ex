@@ -403,7 +403,7 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     {:noreply, assign(socket, :priority_picker_open, false)}
   end
 
-  def handle_event("priority_picker_keydown", %{"key" => key}, socket) do
+  def handle_event("priority_picker_keydown", %{"key" => key} = event, socket) do
     cond do
       key == "Escape" ->
         {:noreply, assign(socket, :priority_picker_open, false)}

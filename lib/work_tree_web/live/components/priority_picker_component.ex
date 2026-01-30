@@ -29,7 +29,9 @@ defmodule WorkTreeWeb.Components.PriorityPickerComponent do
       id="priority-picker-backdrop"
       class="priority-picker-backdrop"
       phx-click="close_priority_picker"
-      phx-window-keydown="priority_picker_keydown"
+      phx-keydown="priority_picker_keydown"
+      tabindex="0"
+      phx-mounted={JS.focus()}
     >
       <div
         id="priority-picker"
