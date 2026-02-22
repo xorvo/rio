@@ -20,7 +20,32 @@ if System.get_env("PHX_SERVER") do
   config :work_tree, WorkTreeWeb.Endpoint, server: true
 end
 
-if config_env() == :prod do
+# Desktop mode: SQLite backend, localhost only
+if System.get_env("WORK_TREE_DESKTOP") == "true" do
+  config :work_tree, storage_backend: :sqlite
+
+  db_dir =
+    System.get_env("WORK_TREE_DATA_DIR") ||
+      Path.join(
+        System.get_env("HOME") || "/tmp",
+        "Library/Application Support/WorkTree"
+      )
+
+  config :work_tree, WorkTree.Repo,
+    database: Path.join(db_dir, "work_tree.db"),
+    pool_size: 1,
+    journal_mode: :wal
+
+  port = String.to_integer(System.get_env("PORT") || "0")
+
+  config :work_tree, WorkTreeWeb.Endpoint,
+    http: [ip: {127, 0, 0, 1}, port: port],
+    check_origin: false,
+    secret_key_base: Base.encode64(:crypto.strong_rand_bytes(48)),
+    server: true
+end
+
+if config_env() == :prod and System.get_env("WORK_TREE_DESKTOP") != "true" do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """

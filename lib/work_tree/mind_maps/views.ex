@@ -7,6 +7,7 @@ defmodule WorkTree.MindMaps.Views do
   import Ecto.Query
   alias WorkTree.Repo
   alias WorkTree.MindMaps.Node
+  alias WorkTree.DB
 
   @doc """
   Get all TODO items sorted by priority (p0 first) then by updated date.
@@ -37,9 +38,12 @@ defmodule WorkTree.MindMaps.Views do
 
     query =
       if parent_id do
-        # Filter to descendants of the given parent using array containment
-        # Cast to Ecto.UUID for proper binary encoding
-        where(query, [n], type(^parent_id, Ecto.UUID) == fragment("ANY(?)", n.path))
+        if DB.sqlite?() do
+          pattern = "%/#{parent_id}/%"
+          where(query, [n], like(n.path, ^pattern))
+        else
+          where(query, [n], type(^parent_id, Ecto.UUID) == fragment("ANY(?)", n.path))
+        end
       else
         query
       end

@@ -9,7 +9,8 @@ import Config
 
 config :work_tree,
   ecto_repos: [WorkTree.Repo],
-  generators: [timestamp_type: :utc_datetime, binary_id: true]
+  generators: [timestamp_type: :utc_datetime, binary_id: true],
+  storage_backend: :postgres
 
 # Configures the endpoint
 config :work_tree, WorkTreeWeb.Endpoint,
@@ -63,3 +64,8 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
+# Desktop mode overlay — loads after env config to override DB settings
+if System.get_env("WORK_TREE_DESKTOP") == "true" do
+  import_config "desktop.exs"
+end

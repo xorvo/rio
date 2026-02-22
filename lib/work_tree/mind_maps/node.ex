@@ -10,7 +10,7 @@ defmodule WorkTree.MindMaps.Node do
     field :body, :map, default: %{}
     field :is_todo, :boolean, default: false
     field :todo_completed, :boolean, default: false
-    field :path, {:array, :binary_id}, default: []
+    field :path, WorkTree.Ecto.PathType, default: []
     field :position, :integer, default: 0
     field :depth, :integer, default: 0
     field :edge_label, :string
