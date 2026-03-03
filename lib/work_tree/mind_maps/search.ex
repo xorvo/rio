@@ -1,21 +1,19 @@
 defmodule WorkTree.MindMaps.Search do
   @moduledoc """
   Search functionality for nodes.
-  Supports PostgreSQL trigram similarity and SQLite LIKE-based fallback.
+  Uses FTS5 for content search, LIKE + FuzzySearch for title matching.
   """
 
   import Ecto.Query
   alias WorkTree.Repo
   alias WorkTree.MindMaps.Node
-  alias WorkTree.DB
 
   @doc """
-  Search nodes by title using trigram similarity (PostgreSQL) or LIKE + FuzzySearch (SQLite).
-  Returns nodes sorted by similarity/relevance score (best matches first).
+  Search nodes by title using LIKE + FuzzySearch.
+  Returns nodes sorted by relevance score (best matches first).
 
   Options:
   - `:limit` - Maximum number of results (default: 20)
-  - `:threshold` - Minimum similarity score 0.0-1.0 (default: 0.1, PostgreSQL only)
   """
   def search_by_title(query, opts \\ []) when is_binary(query) do
     limit = Keyword.get(opts, :limit, 20)
@@ -25,105 +23,130 @@ defmodule WorkTree.MindMaps.Search do
     if String.trim(query_string) == "" do
       []
     else
-      if DB.sqlite?() do
-        search_by_title_sqlite(query_string, limit)
-      else
-        search_by_title_postgres(query_string, limit, opts)
-      end
+      search_by_title_impl(query_string, limit)
     end
   end
 
-  defp search_by_title_postgres(query_string, limit, opts) do
-    threshold = Keyword.get(opts, :threshold, 0.1)
+  defp search_by_title_impl(query_string, limit) do
+    # Tier 1: FTS5 prefix/word matching for fast indexed search
+    fts_query = build_fts_query(query_string) <> "*"
 
-    sql = """
-    SELECT n.*, similarity(n.title, $1) AS sim_score
-    FROM nodes n
-    WHERE similarity(n.title, $1) > $2
-    ORDER BY sim_score DESC
-    LIMIT $3
-    """
-
-    result = Repo.query!(sql, [query_string, threshold, limit])
-
-    columns = Enum.map(result.columns, &String.to_atom/1)
-
-    Enum.map(result.rows, fn row ->
-      map = Enum.zip(columns, row) |> Map.new()
-      struct_from_map(map)
-    end)
-  end
-
-  defp search_by_title_sqlite(query_string, limit) do
-    # Fetch candidates with a loose LIKE match, then re-rank with FuzzySearch
-    like_pattern = "%#{query_string}%"
-
-    candidates =
-      Node
-      |> where([n], is_nil(n.deleted_at))
-      |> where([n], like(n.title, ^like_pattern))
-      |> limit(^(limit * 3))
-      |> order_by([n], desc: n.updated_at)
-      |> Repo.all()
-
-    # If LIKE found few results, also grab all nodes for fuzzy matching
-    candidates =
-      if length(candidates) < limit do
-        all =
-          Node
-          |> where([n], is_nil(n.deleted_at))
-          |> Repo.all()
-
-        (candidates ++ all) |> Enum.uniq_by(& &1.id)
-      else
-        candidates
+    fts_results =
+      try do
+        search_title_fts(fts_query, limit)
+      rescue
+        _ -> []
       end
 
-    # Use FuzzySearch to rank results
-    candidates
-    |> WorkTree.FuzzySearch.search(query_string)
-    |> Enum.take(limit)
-    |> Enum.map(fn {node, _score, _highlights, _ancestry} -> node end)
+    if length(fts_results) >= limit do
+      fts_results
+    else
+      # Tier 2: LIKE + FuzzySearch with Jaro-Winkler for broader matching
+      like_pattern = "%#{query_string}%"
+
+      candidates =
+        Node
+        |> where([n], is_nil(n.deleted_at))
+        |> where([n], like(n.title, ^like_pattern))
+        |> limit(^(limit * 3))
+        |> order_by([n], desc: n.updated_at)
+        |> Repo.all()
+
+      # If LIKE found few results, also grab all nodes for fuzzy matching
+      candidates =
+        if length(candidates) < limit do
+          all =
+            Node
+            |> where([n], is_nil(n.deleted_at))
+            |> Repo.all()
+
+          (candidates ++ all) |> Enum.uniq_by(& &1.id)
+        else
+          candidates
+        end
+
+      fuzzy_results =
+        candidates
+        |> WorkTree.FuzzySearch.search(query_string)
+        |> Enum.map(fn {node, _score, _highlights, _ancestry} -> node end)
+
+      # Merge FTS and fuzzy results, deduplicate
+      fts_ids = MapSet.new(fts_results, & &1.id)
+
+      additional =
+        Enum.reject(fuzzy_results, fn node -> MapSet.member?(fts_ids, node.id) end)
+
+      Enum.take(fts_results ++ additional, limit)
+    end
+  end
+
+  defp search_title_fts(fts_query, limit) do
+    sql = """
+    SELECT n.* FROM nodes n
+    JOIN nodes_fts fts ON fts.rowid = n.rowid
+    WHERE nodes_fts MATCH ?1
+      AND n.deleted_at IS NULL
+    ORDER BY fts.rank
+    LIMIT ?2
+    """
+
+    result = Repo.query!(sql, [fts_query, limit])
+    rows_to_nodes(result)
   end
 
   @doc """
   Search nodes containing text in title or body content.
-  Uses ILIKE for case-insensitive substring matching.
+  Uses FTS5 MATCH for fast indexed full-text search, with LIKE fallback.
   """
   def search_contains(query, opts \\ []) when is_binary(query) do
     limit = Keyword.get(opts, :limit, 20)
-    query_string = "%#{sanitize_query(query)}%"
 
     if String.trim(query) == "" do
       []
     else
-      if DB.sqlite?() do
-        search_contains_sqlite(query_string, limit)
+      fts_query = build_fts_query(query)
+      fts_results = search_contains_fts(fts_query, limit)
+
+      # If FTS found enough results, return them
+      if length(fts_results) >= limit do
+        fts_results
       else
-        search_contains_postgres(query_string, limit)
+        # Fall back to LIKE for partial matches FTS might miss
+        like_query = "%#{sanitize_query(query)}%"
+        like_results = search_contains_like(like_query, limit)
+
+        # Merge and deduplicate, FTS results first (better ranked)
+        fts_ids = MapSet.new(fts_results, & &1.id)
+
+        additional =
+          Enum.reject(like_results, fn node -> MapSet.member?(fts_ids, node.id) end)
+
+        Enum.take(fts_results ++ additional, limit)
       end
     end
   end
 
-  defp search_contains_postgres(query_string, limit) do
-    Node
-    |> where([n], ilike(n.title, ^query_string))
-    |> or_where([n], fragment("?->>'content' ILIKE ?", n.body, ^query_string))
-    |> where([n], is_nil(n.deleted_at))
-    |> limit(^limit)
-    |> order_by([n], desc: n.updated_at)
-    |> Repo.all()
+  defp search_contains_fts(fts_query, limit) do
+    sql = """
+    SELECT n.* FROM nodes n
+    JOIN nodes_fts fts ON fts.rowid = n.rowid
+    WHERE nodes_fts MATCH ?1
+      AND n.deleted_at IS NULL
+    ORDER BY fts.rank
+    LIMIT ?2
+    """
+
+    result = Repo.query!(sql, [fts_query, limit])
+    rows_to_nodes(result)
   end
 
-  defp search_contains_sqlite(query_string, limit) do
-    # SQLite: LIKE is case-insensitive for ASCII by default
-    # Use json_extract for body content
+  defp search_contains_like(like_query, limit) do
     Node
     |> where([n], is_nil(n.deleted_at))
     |> where(
       [n],
-      like(n.title, ^query_string) or
-        like(fragment("json_extract(?, '$.content')", n.body), ^query_string)
+      like(n.title, ^like_query) or
+        like(fragment("json_extract(?, '$.content')", n.body), ^like_query)
     )
     |> limit(^limit)
     |> order_by([n], desc: n.updated_at)
@@ -155,19 +178,23 @@ defmodule WorkTree.MindMaps.Search do
     else
       query_string = "%#{sanitize_query(query)}%"
 
-      if DB.sqlite?() do
-        base_query
-        |> where([n], like(n.title, ^query_string))
-        |> Repo.all()
-      else
-        base_query
-        |> where([n], ilike(n.title, ^query_string))
-        |> Repo.all()
-      end
+      base_query
+      |> where([n], like(n.title, ^query_string))
+      |> Repo.all()
     end
   end
 
-  # Sanitize search query to prevent SQL injection
+  # Build an FTS5 query string from user input.
+  # Wraps each word in quotes to handle special characters,
+  # and joins with implicit AND.
+  defp build_fts_query(query) do
+    query
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.map(fn word -> "\"#{String.replace(word, "\"", "")}\"" end)
+    |> Enum.join(" ")
+  end
+
+  # Sanitize search query to prevent SQL injection in LIKE patterns
   defp sanitize_query(query) do
     query
     |> String.replace(~r/[%_\\]/, fn
@@ -177,22 +204,32 @@ defmodule WorkTree.MindMaps.Search do
     end)
   end
 
-  # Convert a raw SQL result map to a Node struct
-  defp struct_from_map(map) do
-    %Node{
-      id: map[:id],
-      title: map[:title],
-      body: map[:body],
-      is_todo: map[:is_todo],
-      todo_completed: map[:todo_completed],
-      priority: map[:priority],
-      path: map[:path],
-      position: map[:position],
-      depth: map[:depth],
-      edge_label: map[:edge_label],
-      parent_id: map[:parent_id],
-      inserted_at: map[:inserted_at],
-      updated_at: map[:updated_at]
-    }
+  # Convert raw SQL result rows to Node structs
+  defp rows_to_nodes(%{columns: columns, rows: rows}) do
+    fields = Enum.map(columns, &String.to_existing_atom/1)
+
+    Enum.map(rows, fn row ->
+      attrs = Enum.zip(fields, row) |> Map.new()
+
+      %Node{
+        id: attrs[:id],
+        title: attrs[:title],
+        body: attrs[:body],
+        is_todo: attrs[:is_todo],
+        todo_completed: attrs[:todo_completed],
+        priority: attrs[:priority],
+        path: WorkTree.Ecto.PathType.deserialize_path(attrs[:path]),
+        position: attrs[:position],
+        depth: attrs[:depth],
+        edge_label: attrs[:edge_label],
+        parent_id: attrs[:parent_id],
+        link: attrs[:link],
+        due_date: attrs[:due_date],
+        locked: attrs[:locked],
+        deleted_at: attrs[:deleted_at],
+        inserted_at: attrs[:inserted_at],
+        updated_at: attrs[:updated_at]
+      }
+    end)
   end
 end

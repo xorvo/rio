@@ -1,6 +1,6 @@
 .PHONY: web desktop-dev desktop-build clean
 
-# Standard web development with PostgreSQL
+# Start Phoenix dev server (SQLite)
 web:
 	mix phx.server
 
@@ -25,9 +25,9 @@ desktop-release:
 	mkdir -p native/src-tauri/sidecar
 	cp -r _build/prod/rel/work_tree_desktop/bin/work_tree_desktop native/src-tauri/sidecar/work_tree_server
 
-# Run desktop tests with SQLite
-desktop-test:
-	WORK_TREE_DESKTOP=true MIX_ENV=test mix test
+# Run tests
+test:
+	mix test
 
 # Install all dependencies
 setup:

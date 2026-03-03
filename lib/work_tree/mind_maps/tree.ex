@@ -1,13 +1,11 @@
 defmodule WorkTree.MindMaps.Tree do
   @moduledoc """
   Handles tree path operations for the mind map node hierarchy.
-  Uses materialized path pattern with UUID arrays for efficient subtree queries.
-  Supports both PostgreSQL (array) and SQLite (delimited string) backends.
+  Uses materialized path pattern with delimited strings for efficient subtree queries.
   """
 
   import Ecto.Query
   alias WorkTree.MindMaps.Node
-  alias WorkTree.DB
 
   @doc """
   Builds the path for a new node given its parent and the node's own ID.
@@ -24,27 +22,17 @@ defmodule WorkTree.MindMaps.Tree do
 
   @doc """
   Returns a query for all descendants of a node (subtree).
-  PostgreSQL: uses ANY operator on UUID array path.
-  SQLite: uses LIKE on delimited string path.
+  Uses LIKE on delimited string path.
   Excludes soft-deleted nodes by default.
   """
   def descendants_query(%Node{id: id}, opts \\ []) do
     include_deleted = Keyword.get(opts, :include_deleted, false)
+    pattern = "%/#{id}/%"
 
     query =
-      if DB.sqlite?() do
-        # SQLite: path stored as "/uuid1/uuid2/uuid3/", search with LIKE '%/id/%'
-        pattern = "%/#{id}/%"
-
-        from(n in Node,
-          where: like(n.path, ^pattern) and n.id != ^id
-        )
-      else
-        # PostgreSQL: use ANY() on UUID array
-        from(n in Node,
-          where: type(^id, Ecto.UUID) == fragment("ANY(?)", n.path) and n.id != ^id
-        )
-      end
+      from(n in Node,
+        where: like(n.path, ^pattern) and n.id != ^id
+      )
 
     if include_deleted do
       query

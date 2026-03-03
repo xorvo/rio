@@ -7,8 +7,8 @@ defmodule WorkTree.MindMaps do
   import Ecto.Query
   alias WorkTree.Repo
   alias WorkTree.MindMaps.{Node, Attachment, Tree}
+  alias WorkTree.Ecto.PathType
   alias WorkTree.Events
-  alias WorkTree.DB
 
   # Node CRUD
 
@@ -552,7 +552,7 @@ defmodule WorkTree.MindMaps do
       path_updates = Tree.rebuild_paths(node, new_parent, descendants)
 
       Enum.each(path_updates, fn {id, new_path, new_depth} ->
-        serialized_path = DB.serialize_path(new_path)
+        serialized_path = PathType.serialize_path(new_path)
 
         from(n in Node, where: n.id == ^id)
         |> Repo.update_all(set: [path: serialized_path, depth: new_depth])

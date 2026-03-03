@@ -7,6 +7,7 @@ defmodule WorkTree.FuzzySearch do
   - Title starts with query: 80 points
   - Title word starts with query: 60 points
   - Title contains query: 40 points
+  - Jaro-Winkler similarity > 0.85: 35 points (typo tolerance)
   - Body contains query: 20 points
   - Consecutive character matches bonus
   - Earlier match position bonus
@@ -104,6 +105,10 @@ defmodule WorkTree.FuzzySearch do
         pos = find_substring_position(text_lower, query_lower)
         {round(40 * base_multiplier), [{pos, pos + String.length(query_lower)}]}
 
+      # Jaro-Winkler similarity for typo tolerance
+      jaro_winkler_near_match?(text_lower, query_lower) ->
+        {round(35 * base_multiplier), []}
+
       # Fuzzy character match
       true ->
         case fuzzy_match(text_lower, query_chars) do
@@ -112,9 +117,31 @@ defmodule WorkTree.FuzzySearch do
             {round(score * base_multiplier), highlights}
 
           :no_match ->
-            {0, []}
+            # Check individual words for Jaro-Winkler matches
+            jw_score = best_word_jaro_winkler(text_lower, query_lower)
+
+            if jw_score > 0.80 do
+              {round(25 * jw_score * base_multiplier), []}
+            else
+              {0, []}
+            end
         end
     end
+  end
+
+  # Returns true if the Jaro-Winkler similarity exceeds the near-match threshold
+  defp jaro_winkler_near_match?(text_lower, query_lower) do
+    TheFuzz.Similarity.JaroWinkler.compare(text_lower, query_lower) > 0.85
+  end
+
+  # Find the best Jaro-Winkler score between the query and any word in the text
+  defp best_word_jaro_winkler(text_lower, query_lower) do
+    text_lower
+    |> String.split(~r/[\s\-_]+/)
+    |> Enum.map(fn word ->
+      TheFuzz.Similarity.JaroWinkler.compare(word, query_lower)
+    end)
+    |> Enum.max(fn -> 0.0 end)
   end
 
   defp word_start_match?(text_lower, query_lower) do

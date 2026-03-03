@@ -1,11 +1,7 @@
 defmodule WorkTree.Repo do
   use Ecto.Repo,
     otp_app: :work_tree,
-    adapter:
-      if(System.get_env("WORK_TREE_DESKTOP") == "true",
-        do: Ecto.Adapters.SQLite3,
-        else: Ecto.Adapters.Postgres
-      )
+    adapter: Ecto.Adapters.SQLite3
 
   @impl true
   def init(_type, config) do
