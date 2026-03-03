@@ -20,6 +20,11 @@ if System.get_env("PHX_SERVER") do
   config :work_tree, WorkTreeWeb.Endpoint, server: true
 end
 
+# Sync directory for cloud-drive-based syncing (iCloud, Dropbox, etc.)
+if sync_dir = System.get_env("WORK_TREE_SYNC_DIR") do
+  config :work_tree, :sync_dir, sync_dir
+end
+
 # Desktop/Tauri mode: override DB path and endpoint settings
 if System.get_env("WORK_TREE_DESKTOP") == "true" do
   db_dir =

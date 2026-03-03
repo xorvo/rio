@@ -18,7 +18,7 @@ defmodule WorkTree.Application do
         WorkTree.AutoArchiver,
         # Start to serve requests, typically the last entry
         WorkTreeWeb.Endpoint
-      ]
+      ] ++ sync_children()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -44,6 +44,16 @@ defmodule WorkTree.Application do
 
     if db_path do
       db_path |> Path.dirname() |> File.mkdir_p!()
+    end
+  end
+
+  defp sync_children do
+    sync_dir = Application.get_env(:work_tree, :sync_dir)
+
+    if sync_dir do
+      [{WorkTree.Sync.Worker, sync_dir: sync_dir}]
+    else
+      [{WorkTree.Sync.Worker, []}]
     end
   end
 
