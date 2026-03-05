@@ -4,13 +4,13 @@ Project-specific instructions for Claude Code.
 
 ## Project overview
 
-Work Tree is a mind mapping app built with Phoenix LiveView + SQLite. It runs as a web app (`mix phx.server`) or a native macOS desktop app via Tauri 2.0.
+Work Tree is a mind mapping app built with Phoenix LiveView + SQLite. It runs as a web app (`mix phx.server`) or a native macOS desktop app via Electron.
 
 ## Tech stack
 
 - **Backend**: Elixir, Phoenix LiveView 1.1, Ecto with SQLite3 adapter
 - **Frontend**: Phoenix LiveView (server-rendered), Tailwind CSS 4, DaisyUI 5, vanilla JS hooks
-- **Desktop**: Tauri 2.0 (Rust), bundles the Phoenix release as a sidecar
+- **Desktop**: Electron (Chromium), bundles the Phoenix release as a sidecar
 - **Database**: SQLite with FTS5 full-text search, WAL mode, materialized paths for tree structure
 
 ## Key directories
@@ -18,7 +18,7 @@ Work Tree is a mind mapping app built with Phoenix LiveView + SQLite. It runs as
 - `lib/work_tree/mind_maps/` — core context: CRUD, tree operations, search, layout
 - `lib/work_tree_web/live/mind_map_live/` — main LiveView and handler modules
 - `lib/work_tree/exchange/` — export/import system (`.wtx` format)
-- `native/src-tauri/` — Tauri shell (Rust)
+- `native/electron/` — Electron shell (Node.js)
 - `config/runtime.exs` — runtime config, desktop mode detection, DB path
 
 ## Building and running
@@ -33,25 +33,26 @@ mix phx.server
 
 ### Desktop app
 
-Prerequisites: Rust toolchain, Tauri CLI (`cargo install tauri-cli`)
+Prerequisites: Node.js 20+
 
 ```bash
-# Dev mode (builds Tauri + starts Phoenix on a random port)
+# Install Electron deps
+cd native/electron && npm install
+
+# Dev mode (starts Phoenix + Electron on a random port)
 make desktop-dev
 
 # Production build (.app + .dmg)
 make desktop-build
 
 # Install to /Applications
-cp -r "native/src-tauri/target/release/bundle/macos/Work Tree.app" /Applications/
+cp -r native/electron/dist/mac-arm64/Work\ Tree.app /Applications/
 ```
-
-**Important**: The first `cargo tauri build` or `cargo tauri dev` takes several minutes to compile Rust dependencies. Subsequent builds are incremental and fast.
 
 ### Common build issues
 
 - **`phoenix-colocated` not found during `mix assets.deploy`**: Run `MIX_ENV=prod WORK_TREE_DESKTOP=true mix compile` first to generate colocated hooks in the prod build path.
-- **`resource path 'sidecar' doesn't exist`**: The sidecar directory is created by `make desktop-release`. For dev mode, `mkdir -p native/src-tauri/sidecar` suffices.
+- **`sidecar not found`**: The sidecar directory is created by `make desktop-release`. For dev mode, the Electron main process falls back to `native/scripts/run-phoenix.sh`.
 - **`pg_dump` version mismatch**: Use `/opt/homebrew/opt/postgresql@15/bin/pg_dump` if the system `pg_dump` is outdated.
 - **SQLite `database is locked`**: Kill lingering BEAM processes (`pkill -f beam.smp`) before starting a new server.
 - **FTS5 rebuild errors (`no such column: T.body_text`)**: The FTS index uses `content=` sync. Use `INSERT INTO nodes_fts(nodes_fts) VALUES('delete-all')` to clear it, not `DELETE FROM nodes_fts`.
@@ -96,8 +97,8 @@ mix work_tree.import backup.wtx --mode merge
 
 ## Release workflow
 
-1. Update version in `native/src-tauri/tauri.conf.json` and `mix.exs`
+1. Update version in `native/electron/package.json` and `mix.exs`
 2. `make desktop-build`
-3. `cp -r "native/src-tauri/target/release/bundle/macos/Work Tree.app" /Applications/`
+3. `cp -r native/electron/dist/mac-arm64/Work\ Tree.app /Applications/`
 
-The `.dmg` at `native/src-tauri/target/release/bundle/dmg/` can be used for distribution.
+The `.dmg` at `native/electron/dist/` can be used for distribution.

@@ -1120,10 +1120,10 @@ const Hooks = {
 
     applyTransform() {
       if (this.canvas) {
-        // Use transform: scale() for zooming (standards-compliant, works in Chrome + WebKit/Tauri)
-        // Combined with translate for panning. translate is applied first (in pre-multiplied order),
-        // so we divide pan values by zoom to get canvas-space coordinates.
-        this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        // CSS zoom re-rasterizes text at the target size (crisp at any zoom level).
+        // Pan values divided by zoom because zoom affects the transform coordinate space.
+        this.canvas.style.zoom = this.zoom;
+        this.canvas.style.transform = `translate(${this.panX / this.zoom}px, ${this.panY / this.zoom}px)`;
       }
     },
 
@@ -1147,9 +1147,8 @@ const Hooks = {
       const rootHeight = parseFloat(rootNode.style.height) || 44;
 
       // Center the root node in the viewport
-      // Screen pos = canvas pos * zoom + panX, so panX = screenCenter - canvasCenter * zoom
-      this.panX = rect.width / 2 - (rootX + rootWidth / 2) * this.zoom;
-      this.panY = rect.height / 2 - (rootY + rootHeight / 2) * this.zoom;
+      this.panX = rect.width / 2 - rootX - rootWidth / 2;
+      this.panY = rect.height / 2 - rootY - rootHeight / 2;
     },
 
     scrollToNode(nodeId) {

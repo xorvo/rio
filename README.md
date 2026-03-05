@@ -1,6 +1,6 @@
 # Work Tree
 
-A real-time mind mapping application built with Phoenix LiveView and SQLite. Runs as a web app or a native macOS desktop app (Tauri).
+A real-time mind mapping application built with Phoenix LiveView and SQLite. Runs as a web app or a native macOS desktop app (Electron).
 
 ## Features
 
@@ -16,22 +16,22 @@ A real-time mind mapping application built with Phoenix LiveView and SQLite. Run
 - **Undo delete** - Soft delete with batch restore
 - **Subtree focus** - Drill down into any branch
 - **Theme picker** - Multiple UI themes via DaisyUI
-- **Desktop app** - Native macOS app via Tauri 2.0
+- **Desktop app** - Native macOS app via Electron
 
 ## Architecture
 
-Work Tree is a single Phoenix LiveView + SQLite codebase. The native macOS app wraps the Phoenix server in a Tauri shell.
+Work Tree is a single Phoenix LiveView + SQLite codebase. The native macOS app wraps the Phoenix server in an Electron shell.
 
 ```mermaid
 graph TB
     subgraph "Native macOS App (.app bundle)"
-        Tauri["Tauri 2.0 Shell<br/>(Rust, WKWebView)"]
+        Electron["Electron Shell<br/>(Node.js, Chromium)"]
         Sidecar["Phoenix Release<br/>(Bundled ERTS + BEAM)"]
         SQLiteD[(SQLite DB<br/>~/Library/Application Support/WorkTree/)]
 
-        Tauri -->|"spawns on random port"| Sidecar
+        Electron -->|"spawns on random port"| Sidecar
         Sidecar -->|"Ecto.Adapters.SQLite3"| SQLiteD
-        Tauri -->|"WebView loads<br/>http://localhost:{port}"| Sidecar
+        Electron -->|"BrowserWindow loads<br/>http://localhost:{port}"| Sidecar
     end
 
     subgraph "Web Mode"
@@ -74,7 +74,7 @@ graph TB
 |---------|-----|---------|
 | **Binding** | `127.0.0.1` (dev), configurable (prod) | `127.0.0.1` only |
 | **DB location** | Local file (`work_tree_dev.db`) | `~/Library/Application Support/WorkTree/` |
-| **Shell** | None (browser) | Tauri 2.0 (WKWebView) |
+| **Shell** | None (browser) | Electron (Chromium) |
 | **Env flag** | Default | `WORK_TREE_DESKTOP=true` |
 
 ## Project structure
@@ -102,13 +102,14 @@ work_tree/
 │   ├── prod.exs                    # Production
 │   ├── runtime.exs                 # Runtime config (env vars)
 │   └── test.exs                    # Test config
-├── native/                         # Tauri desktop shell
-│   ├── src-tauri/
-│   │   ├── src/lib.rs              # Phoenix sidecar management
-│   │   ├── tauri.conf.json         # Tauri config (window, bundle, plugins)
+├── native/                         # Electron desktop shell
+│   ├── electron/
+│   │   ├── main.js                 # Main process: port pick, spawn, window, cleanup
+│   │   ├── preload.js              # Minimal preload (context isolation)
+│   │   ├── loading.html            # Splash screen while Phoenix boots
+│   │   ├── package.json            # Electron + electron-builder config
 │   │   ├── icons/                  # App icons (all sizes + .icns)
-│   │   └── capabilities/           # Tauri v2 security capabilities
-│   ├── dist/index.html             # Loading splash screen
+│   │   └── build/                  # macOS entitlements
 │   └── scripts/run-phoenix.sh      # Dev mode launcher
 ├── priv/
 │   ├── repo/migrations/            # SQLite migrations
@@ -131,11 +132,12 @@ Visit [localhost:4000](http://localhost:4000).
 
 ### Desktop (macOS)
 
-**Prerequisites:** Rust toolchain, Tauri CLI (`cargo install tauri-cli`)
+**Prerequisites:** Node.js 20+
 
-**Dev mode** (connects to running Phoenix server):
+**Dev mode** (starts Phoenix + Electron):
 
 ```bash
+make setup
 make desktop-dev
 ```
 
@@ -145,12 +147,12 @@ make desktop-dev
 make desktop-build
 ```
 
-The built app is at `native/src-tauri/target/release/bundle/macos/Work Tree.app`.
+The built app is at `native/electron/dist/mac-arm64/Work Tree.app`.
 
 To install:
 
 ```bash
-cp -R "native/src-tauri/target/release/bundle/macos/Work Tree.app" /Applications/
+cp -r native/electron/dist/mac-arm64/Work\ Tree.app /Applications/
 ```
 
 ### Build targets
@@ -158,7 +160,7 @@ cp -R "native/src-tauri/target/release/bundle/macos/Work Tree.app" /Applications
 | Command | Description |
 |---------|-------------|
 | `make web` | Start Phoenix dev server (SQLite) |
-| `make desktop-dev` | Run Tauri dev mode |
+| `make desktop-dev` | Run Electron dev mode |
 | `make desktop-build` | Build .app + .dmg (bundles Phoenix release as sidecar) |
 | `make desktop-release` | Build just the Phoenix release for desktop |
 | `make test` | Run tests |
@@ -176,19 +178,19 @@ To override: set the `WORK_TREE_DATA_DIR` environment variable.
 ### Building a new release
 
 ```bash
-# 1. Build the production app (compiles Phoenix release + Tauri bundle)
+# 1. Build the production app (compiles Phoenix release + Electron bundle)
 make desktop-build
 
 # Output:
-#   native/src-tauri/target/release/bundle/macos/Work Tree.app
-#   native/src-tauri/target/release/bundle/dmg/Work Tree_0.1.0_aarch64.dmg
+#   native/electron/dist/mac-arm64/Work Tree.app
+#   native/electron/dist/Work Tree-0.1.0-arm64.dmg
 ```
 
 ### Installing / updating
 
 ```bash
 # Install or update (replaces the app binary, data is preserved)
-cp -r "native/src-tauri/target/release/bundle/macos/Work Tree.app" /Applications/
+cp -r native/electron/dist/mac-arm64/Work\ Tree.app /Applications/
 ```
 
 The `.dmg` can also be used for distribution — mount it and drag to Applications.
@@ -197,12 +199,12 @@ The `.dmg` can also be used for distribution — mount it and drag to Applicatio
 
 Update the version in these files before building:
 
-- `native/src-tauri/tauri.conf.json` — `"version"` field (controls DMG filename and app metadata)
+- `native/electron/package.json` — `"version"` field (controls DMG filename and app metadata)
 - `mix.exs` — `version` field (Elixir release version)
 
 ### Data migration between machines
 
-Export your data to a portable `.wtx` file (requires the `feat/export-postgres` branch or export mix task):
+Export your data to a portable `.wtx` file:
 
 ```bash
 mix work_tree.export --output backup.wtx

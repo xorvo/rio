@@ -1,0 +1,44 @@
+{
+  "name": "work-tree",
+  "version": "0.1.0",
+  "description": "Work Tree — mind mapping desktop app",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac --dir && electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "get-port": "^7.1.0"
+  },
+  "build": {
+    "appId": "com.worktree.app",
+    "productName": "Work Tree",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "icons/icon.icns",
+      "target": ["dmg", "dir"],
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "minimumSystemVersion": "12.0"
+    },
+    "dmg": {
+      "title": "Work Tree"
+    },
+    "extraResources": [
+      {
+        "from": "sidecar",
+        "to": "sidecar",
+        "filter": ["**/*"]
+      }
+    ],
+    "files": [
+      "main.js",
+      "preload.js",
+      "loading.html"
+    ]
+  }
+}

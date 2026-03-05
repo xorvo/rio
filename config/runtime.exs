@@ -25,7 +25,7 @@ if sync_dir = System.get_env("WORK_TREE_SYNC_DIR") do
   config :work_tree, :sync_dir, sync_dir
 end
 
-# Desktop/Tauri mode: override DB path and endpoint settings
+# Desktop mode: override DB path and endpoint settings
 if System.get_env("WORK_TREE_DESKTOP") == "true" do
   db_dir =
     System.get_env("WORK_TREE_DATA_DIR") ||

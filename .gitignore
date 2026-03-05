@@ -36,10 +36,10 @@ mind_mapper_poc-*.tar
 npm-debug.log
 /assets/node_modules/
 
-# Tauri / Rust build artifacts
-/native/src-tauri/target/
-/native/src-tauri/sidecar/
-/native/src-tauri/gen/
+# Electron build artifacts
+/native/electron/node_modules/
+/native/electron/sidecar/
+/native/electron/dist/
 
 # SQLite database files
 *.db

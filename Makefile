@@ -4,26 +4,26 @@
 web:
 	mix phx.server
 
-# Desktop development: starts Phoenix with SQLite, then Tauri dev mode
+# Desktop development: starts Phoenix via Electron
 desktop-dev:
 	@echo "Starting Work Tree in desktop development mode..."
-	cd native/src-tauri && cargo build
-	cd native/src-tauri && WORK_TREE_DESKTOP=true cargo tauri dev
+	cd native/electron && npm start
 
-# Build desktop release: compile Phoenix release, package with Tauri
+# Build desktop release: compile Phoenix release, package with Electron
 desktop-build: desktop-release
-	@echo "Building Tauri desktop app..."
-	cd native/src-tauri && cargo tauri build
+	@echo "Building Electron desktop app..."
+	cd native/electron && npm run build
 
 # Build the Phoenix release for desktop (sidecar binary)
 desktop-release:
 	@echo "Building Phoenix release for desktop..."
 	MIX_ENV=prod WORK_TREE_DESKTOP=true mix deps.get --only prod
+	MIX_ENV=prod WORK_TREE_DESKTOP=true mix compile
 	MIX_ENV=prod WORK_TREE_DESKTOP=true mix assets.deploy
 	MIX_ENV=prod WORK_TREE_DESKTOP=true mix release desktop --overwrite
-	@echo "Copying release to Tauri sidecar directory..."
-	rm -rf native/src-tauri/sidecar
-	cp -r _build/prod/rel/desktop native/src-tauri/sidecar
+	@echo "Copying release to Electron sidecar directory..."
+	rm -rf native/electron/sidecar
+	cp -r _build/prod/rel/desktop native/electron/sidecar
 
 # Run tests
 test:
@@ -32,11 +32,12 @@ test:
 # Install all dependencies
 setup:
 	mix deps.get
-	cd native/src-tauri && cargo fetch
+	cd native/electron && npm install
 
 # Clean build artifacts
 clean:
 	mix clean
 	rm -rf _build
-	rm -rf native/src-tauri/target
-	rm -rf native/src-tauri/sidecar
+	rm -rf native/electron/sidecar
+	rm -rf native/electron/dist
+	rm -rf native/electron/node_modules
