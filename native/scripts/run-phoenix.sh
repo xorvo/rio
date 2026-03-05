@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script invoked by Electron in dev mode to start Phoenix with SQLite backend.
+# Script to start Phoenix with SQLite backend in dev mode.
 # Inherits the user's shell environment so asdf/mise shims are available.
 
 set -e
@@ -16,7 +16,7 @@ cd "$(dirname "$0")/../.."
 
 export WORK_TREE_DESKTOP=true
 export PHX_SERVER=true
-# PORT is passed in from Electron
+# PORT is passed in from the launcher
 export PORT="${PORT:-4000}"
 
 exec mix phx.server

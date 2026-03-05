@@ -36,10 +36,8 @@ mind_mapper_poc-*.tar
 npm-debug.log
 /assets/node_modules/
 
-# Electron build artifacts
-/native/electron/node_modules/
-/native/electron/sidecar/
-/native/electron/dist/
+# Desktop app bundle (built by make desktop-build)
+/Work Tree.app/
 
 # SQLite database files
 *.db

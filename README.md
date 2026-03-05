@@ -1,6 +1,6 @@
 # Work Tree
 
-A real-time mind mapping application built with Phoenix LiveView and SQLite. Runs as a web app or a native macOS desktop app (Electron).
+A real-time mind mapping application built with Phoenix LiveView and SQLite. Runs as a web app or a native macOS desktop app (Chrome app mode).
 
 ## Features
 
@@ -16,22 +16,22 @@ A real-time mind mapping application built with Phoenix LiveView and SQLite. Run
 - **Undo delete** - Soft delete with batch restore
 - **Subtree focus** - Drill down into any branch
 - **Theme picker** - Multiple UI themes via DaisyUI
-- **Desktop app** - Native macOS app via Electron
+- **Desktop app** - Native macOS app via Chrome app mode (~80MB, no bundled browser)
 
 ## Architecture
 
-Work Tree is a single Phoenix LiveView + SQLite codebase. The native macOS app wraps the Phoenix server in an Electron shell.
+Work Tree is a single Phoenix LiveView + SQLite codebase. The native macOS app bundles the Phoenix release in a `.app` and opens Chrome in app mode.
 
 ```mermaid
 graph TB
     subgraph "Native macOS App (.app bundle)"
-        Electron["Electron Shell<br/>(Node.js, Chromium)"]
+        Launcher["Shell Script Launcher"]
         Sidecar["Phoenix Release<br/>(Bundled ERTS + BEAM)"]
         SQLiteD[(SQLite DB<br/>~/Library/Application Support/WorkTree/)]
 
-        Electron -->|"spawns on random port"| Sidecar
+        Launcher -->|"spawns on random port"| Sidecar
         Sidecar -->|"Ecto.Adapters.SQLite3"| SQLiteD
-        Electron -->|"BrowserWindow loads<br/>http://localhost:{port}"| Sidecar
+        Launcher -->|"opens Chrome --app=<br/>http://localhost:{port}"| Chrome["Chrome App Window"]
     end
 
     subgraph "Web Mode"
@@ -74,7 +74,7 @@ graph TB
 |---------|-----|---------|
 | **Binding** | `127.0.0.1` (dev), configurable (prod) | `127.0.0.1` only |
 | **DB location** | Local file (`work_tree_dev.db`) | `~/Library/Application Support/WorkTree/` |
-| **Shell** | None (browser) | Electron (Chromium) |
+| **Shell** | None (browser) | Chrome app mode (standalone window) |
 | **Env flag** | Default | `WORK_TREE_DESKTOP=true` |
 
 ## Project structure
@@ -102,15 +102,13 @@ work_tree/
 │   ├── prod.exs                    # Production
 │   ├── runtime.exs                 # Runtime config (env vars)
 │   └── test.exs                    # Test config
-├── native/                         # Electron desktop shell
-│   ├── electron/
-│   │   ├── main.js                 # Main process: port pick, spawn, window, cleanup
-│   │   ├── preload.js              # Minimal preload (context isolation)
-│   │   ├── loading.html            # Splash screen while Phoenix boots
-│   │   ├── package.json            # Electron + electron-builder config
-│   │   ├── icons/                  # App icons (all sizes + .icns)
-│   │   └── build/                  # macOS entitlements
-│   └── scripts/run-phoenix.sh      # Dev mode launcher
+├── native/
+│   ├── app-bundle/                 # macOS .app bundle template
+│   │   ├── launcher                # Shell script (main executable)
+│   │   ├── Info.plist              # macOS app metadata
+│   │   ├── PkgInfo                 # Package type
+│   │   └── icon.icns               # App icon
+│   └── scripts/run-phoenix.sh      # Dev mode launcher (legacy)
 ├── priv/
 │   ├── repo/migrations/            # SQLite migrations
 │   └── static/                     # Compiled assets, icons, images
@@ -132,12 +130,11 @@ Visit [localhost:4000](http://localhost:4000).
 
 ### Desktop (macOS)
 
-**Prerequisites:** Node.js 20+
+**Prerequisites:** Google Chrome
 
-**Dev mode** (starts Phoenix + Electron):
+**Dev mode** (starts Phoenix + opens Chrome app window):
 
 ```bash
-make setup
 make desktop-dev
 ```
 
@@ -147,12 +144,12 @@ make desktop-dev
 make desktop-build
 ```
 
-The built app is at `native/electron/dist/mac-arm64/Work Tree.app`.
+The built app is at `Work Tree.app` in the project root.
 
 To install:
 
 ```bash
-cp -r native/electron/dist/mac-arm64/Work\ Tree.app /Applications/
+cp -r "Work Tree.app" /Applications/
 ```
 
 ### Build targets
@@ -160,8 +157,8 @@ cp -r native/electron/dist/mac-arm64/Work\ Tree.app /Applications/
 | Command | Description |
 |---------|-------------|
 | `make web` | Start Phoenix dev server (SQLite) |
-| `make desktop-dev` | Run Electron dev mode |
-| `make desktop-build` | Build .app + .dmg (bundles Phoenix release as sidecar) |
+| `make desktop-dev` | Start Phoenix + open Chrome app mode window |
+| `make desktop-build` | Build .app bundle (bundles Phoenix release as sidecar) |
 | `make desktop-release` | Build just the Phoenix release for desktop |
 | `make test` | Run tests |
 | `make setup` | Install all dependencies |
@@ -173,33 +170,31 @@ cp -r native/electron/dist/mac-arm64/Work\ Tree.app /Applications/
 
 The SQLite database lives at `~/Library/Application Support/WorkTree/work_tree.db`. This directory is outside the `.app` bundle and is never touched by installs or updates. The app auto-creates it on first launch if it doesn't exist.
 
-To override: set the `WORK_TREE_DATA_DIR` environment variable.
+Chrome window preferences (size, position) are stored at `~/Library/Application Support/WorkTree/chrome-profile/`.
+
+To override the data directory: set the `WORK_TREE_DATA_DIR` environment variable.
 
 ### Building a new release
 
 ```bash
-# 1. Build the production app (compiles Phoenix release + Electron bundle)
+# Build the .app bundle (compiles Phoenix release + assembles bundle)
 make desktop-build
 
-# Output:
-#   native/electron/dist/mac-arm64/Work Tree.app
-#   native/electron/dist/Work Tree-0.1.0-arm64.dmg
+# Output: Work Tree.app in project root
 ```
 
 ### Installing / updating
 
 ```bash
 # Install or update (replaces the app binary, data is preserved)
-cp -r native/electron/dist/mac-arm64/Work\ Tree.app /Applications/
+cp -r "Work Tree.app" /Applications/
 ```
-
-The `.dmg` can also be used for distribution — mount it and drag to Applications.
 
 ### Version bumps
 
 Update the version in these files before building:
 
-- `native/electron/package.json` — `"version"` field (controls DMG filename and app metadata)
+- `native/app-bundle/Info.plist` — `CFBundleVersion` (app metadata)
 - `mix.exs` — `version` field (Elixir release version)
 
 ### Data migration between machines
