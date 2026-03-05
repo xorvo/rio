@@ -164,3 +164,54 @@ cp -R "native/src-tauri/target/release/bundle/macos/Work Tree.app" /Applications
 | `make test` | Run tests |
 | `make setup` | Install all dependencies |
 | `make clean` | Remove build artifacts |
+
+## Releasing and updating the desktop app
+
+### Data location
+
+The SQLite database lives at `~/Library/Application Support/WorkTree/work_tree.db`. This directory is outside the `.app` bundle and is never touched by installs or updates. The app auto-creates it on first launch if it doesn't exist.
+
+To override: set the `WORK_TREE_DATA_DIR` environment variable.
+
+### Building a new release
+
+```bash
+# 1. Build the production app (compiles Phoenix release + Tauri bundle)
+make desktop-build
+
+# Output:
+#   native/src-tauri/target/release/bundle/macos/Work Tree.app
+#   native/src-tauri/target/release/bundle/dmg/Work Tree_0.1.0_aarch64.dmg
+```
+
+### Installing / updating
+
+```bash
+# Install or update (replaces the app binary, data is preserved)
+cp -r "native/src-tauri/target/release/bundle/macos/Work Tree.app" /Applications/
+```
+
+The `.dmg` can also be used for distribution — mount it and drag to Applications.
+
+### Version bumps
+
+Update the version in these files before building:
+
+- `native/src-tauri/tauri.conf.json` — `"version"` field (controls DMG filename and app metadata)
+- `mix.exs` — `version` field (Elixir release version)
+
+### Data migration between machines
+
+Export your data to a portable `.wtx` file (requires the `feat/export-postgres` branch or export mix task):
+
+```bash
+mix work_tree.export --output backup.wtx
+```
+
+On the new machine:
+
+```bash
+mix work_tree.import backup.wtx --mode full
+```
+
+Or simply copy `~/Library/Application Support/WorkTree/` to the new machine.

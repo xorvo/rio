@@ -362,7 +362,9 @@ defmodule WorkTree.Exchange.Importer do
   # --- Post-Import: FTS5 Rebuild ---
 
   defp rebuild_fts do
-    Repo.query!("DELETE FROM nodes_fts")
+    # Use FTS5's special 'delete-all' command to purge the index without
+    # triggering content-sync lookups on the nodes table.
+    Repo.query!("INSERT INTO nodes_fts(nodes_fts) VALUES('delete-all')")
 
     Repo.query!("""
     INSERT INTO nodes_fts(rowid, title, body_text)

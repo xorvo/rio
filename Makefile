@@ -20,10 +20,10 @@ desktop-release:
 	@echo "Building Phoenix release for desktop..."
 	MIX_ENV=prod WORK_TREE_DESKTOP=true mix deps.get --only prod
 	MIX_ENV=prod WORK_TREE_DESKTOP=true mix assets.deploy
-	MIX_ENV=prod WORK_TREE_DESKTOP=true mix release work_tree_desktop --overwrite
+	MIX_ENV=prod WORK_TREE_DESKTOP=true mix release desktop --overwrite
 	@echo "Copying release to Tauri sidecar directory..."
-	mkdir -p native/src-tauri/sidecar
-	cp -r _build/prod/rel/work_tree_desktop/bin/work_tree_desktop native/src-tauri/sidecar/work_tree_server
+	rm -rf native/src-tauri/sidecar
+	cp -r _build/prod/rel/desktop native/src-tauri/sidecar
 
 # Run tests
 test:
