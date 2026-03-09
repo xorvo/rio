@@ -1,7 +1,7 @@
 defmodule WorkTree.Repo do
   use Ecto.Repo,
     otp_app: :work_tree,
-    adapter: Ecto.Adapters.Postgres
+    adapter: Ecto.Adapters.SQLite3
 
   @impl true
   def init(_type, config) do

@@ -935,7 +935,6 @@ const Hooks = {
     handleWheel(e) {
       e.preventDefault();
 
-      // Shift + wheel = horizontal pan, otherwise zoom at cursor position
       if (e.shiftKey) {
         // Shift + wheel = horizontal pan
         this.panX -= e.deltaY;
@@ -943,17 +942,18 @@ const Hooks = {
         this.saveViewportState();
       } else if (e.ctrlKey || e.metaKey) {
         // Ctrl/Cmd + wheel = pan (vertical and horizontal)
+        // Note: trackpad pinch-to-zoom also sets ctrlKey on macOS,
+        // but pinch deltaY is small so this still feels like a pan gesture
         this.panX -= e.deltaX;
         this.panY -= e.deltaY;
         this.applyTransform();
         this.saveViewportState();
       } else {
-        // Normal wheel = zoom at cursor position
+        // Normal wheel = zoom at cursor position (Excalidraw-style)
         const rect = this.el.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        // Calculate zoom
         const delta = e.deltaY > 0 ? -this.zoomStep : this.zoomStep;
         const newZoom = Math.min(
           this.maxZoom,
@@ -961,7 +961,6 @@ const Hooks = {
         );
 
         if (newZoom !== this.zoom) {
-          // Zoom towards cursor position
           const zoomRatio = newZoom / this.zoom;
           this.panX = mouseX - (mouseX - this.panX) * zoomRatio;
           this.panY = mouseY - (mouseY - this.panY) * zoomRatio;
@@ -1121,12 +1120,10 @@ const Hooks = {
 
     applyTransform() {
       if (this.canvas) {
-        // Use CSS zoom for scaling (keeps text crisp) and transform only for panning
-        // The pan values need to be adjusted for zoom since zoom affects the coordinate space
+        // CSS zoom re-rasterizes text at the target size (crisp at any zoom level).
+        // Pan values divided by zoom because zoom affects the transform coordinate space.
         this.canvas.style.zoom = this.zoom;
-        this.canvas.style.transform = `translate(${this.panX / this.zoom}px, ${
-          this.panY / this.zoom
-        }px)`;
+        this.canvas.style.transform = `translate(${this.panX / this.zoom}px, ${this.panY / this.zoom}px)`;
       }
     },
 

@@ -20,23 +20,46 @@ if System.get_env("PHX_SERVER") do
   config :work_tree, WorkTreeWeb.Endpoint, server: true
 end
 
-if config_env() == :prod do
-  database_url =
-    System.get_env("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+# Sync directory for cloud-drive-based syncing (iCloud, Dropbox, etc.)
+if sync_dir = System.get_env("WORK_TREE_SYNC_DIR") do
+  config :work_tree, :sync_dir, sync_dir
+end
 
-  maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
+# Desktop mode: override DB path and endpoint settings
+if System.get_env("WORK_TREE_DESKTOP") == "true" do
+  db_dir =
+    System.get_env("WORK_TREE_DATA_DIR") ||
+      Path.join(
+        System.get_env("HOME") || "/tmp",
+        "Library/Application Support/WorkTree"
+      )
 
   config :work_tree, WorkTree.Repo,
-    # ssl: true,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    # For machines with several cores, consider starting multiple pools of `pool_size`
-    # pool_count: 4,
-    socket_options: maybe_ipv6
+    database: Path.join(db_dir, "work_tree.db"),
+    pool_size: 1,
+    journal_mode: :wal
+
+  port = String.to_integer(System.get_env("PORT") || "4949")
+
+  config :work_tree, WorkTreeWeb.Endpoint,
+    http: [ip: {127, 0, 0, 1}, port: port],
+    check_origin: false,
+    secret_key_base: Base.encode64(:crypto.strong_rand_bytes(48)),
+    server: true
+end
+
+if config_env() == :prod and System.get_env("WORK_TREE_DESKTOP") != "true" do
+  database_path =
+    System.get_env("DATABASE_PATH") ||
+      Path.join(
+        System.get_env("HOME") || "/tmp",
+        "work_tree_prod.db"
+      )
+
+  config :work_tree, WorkTree.Repo,
+    database: database_path,
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5"),
+    journal_mode: :wal
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

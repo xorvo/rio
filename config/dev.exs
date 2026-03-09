@@ -2,13 +2,11 @@ import Config
 
 # Configure your database
 config :work_tree, WorkTree.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "work_tree_dev",
+  database: Path.expand("../work_tree_dev.db", __DIR__),
+  pool_size: 5,
+  journal_mode: :wal,
   stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  show_sensitive_data_on_connection_error: true
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

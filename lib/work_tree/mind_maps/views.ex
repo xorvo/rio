@@ -37,9 +37,8 @@ defmodule WorkTree.MindMaps.Views do
 
     query =
       if parent_id do
-        # Filter to descendants of the given parent using array containment
-        # Cast to Ecto.UUID for proper binary encoding
-        where(query, [n], type(^parent_id, Ecto.UUID) == fragment("ANY(?)", n.path))
+        pattern = "%/#{parent_id}/%"
+        where(query, [n], like(n.path, ^pattern))
       else
         query
       end
