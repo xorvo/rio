@@ -10,7 +10,7 @@
   <key>CFBundleVersion</key>
   <string>0.1.0</string>
   <key>CFBundleExecutable</key>
-  <string>launcher</string>
+  <string>WorkTreeMenuBar</string>
   <key>CFBundleIconFile</key>
   <string>icon</string>
   <key>CFBundlePackageType</key>
@@ -18,6 +18,8 @@
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
   <key>NSHighResolutionCapable</key>
+  <true/>
+  <key>LSUIElement</key>
   <true/>
 </dict>
 </plist>

@@ -36,8 +36,9 @@ mind_mapper_poc-*.tar
 npm-debug.log
 /assets/node_modules/
 
-# Desktop app bundle (built by make desktop-build)
+# Desktop app bundle and compiled Swift binary (built by make)
 /Work Tree.app/
+native/app-bundle/WorkTreeMenuBar
 
 # SQLite database files
 *.db

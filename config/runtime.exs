@@ -39,7 +39,7 @@ if System.get_env("WORK_TREE_DESKTOP") == "true" do
     pool_size: 1,
     journal_mode: :wal
 
-  port = String.to_integer(System.get_env("PORT") || "0")
+  port = String.to_integer(System.get_env("PORT") || "4949")
 
   config :work_tree, WorkTreeWeb.Endpoint,
     http: [ip: {127, 0, 0, 1}, port: port],

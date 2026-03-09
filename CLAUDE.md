@@ -4,13 +4,13 @@ Project-specific instructions for Claude Code.
 
 ## Project overview
 
-Work Tree is a mind mapping app built with Phoenix LiveView + SQLite. It runs as a web app (`mix phx.server`) or a native macOS desktop app via Chrome app mode.
+Work Tree is a mind mapping app built with Phoenix LiveView + SQLite. It runs as a web app (`mix phx.server`) or a native macOS desktop app via a menu bar launcher.
 
 ## Tech stack
 
 - **Backend**: Elixir, Phoenix LiveView 1.1, Ecto with SQLite3 adapter
 - **Frontend**: Phoenix LiveView (server-rendered), Tailwind CSS 4, DaisyUI 5, vanilla JS hooks
-- **Desktop**: Chrome app mode (shell script launcher, no bundled browser)
+- **Desktop**: Native macOS menu bar app (Swift, manages Phoenix sidecar, opens default browser)
 - **Database**: SQLite with FTS5 full-text search, WAL mode, materialized paths for tree structure
 
 ## Key directories
@@ -18,7 +18,7 @@ Work Tree is a mind mapping app built with Phoenix LiveView + SQLite. It runs as
 - `lib/work_tree/mind_maps/` — core context: CRUD, tree operations, search, layout
 - `lib/work_tree_web/live/mind_map_live/` — main LiveView and handler modules
 - `lib/work_tree/exchange/` — export/import system (`.wtx` format)
-- `native/app-bundle/` — macOS .app bundle template (launcher script, Info.plist, icon)
+- `native/app-bundle/` — macOS .app bundle (Swift menu bar app, Info.plist, icon)
 - `config/runtime.exs` — runtime config, desktop mode detection, DB path
 
 ## Building and running
@@ -33,10 +33,10 @@ mix phx.server
 
 ### Desktop app
 
-Prerequisites: Google Chrome
+Prerequisites: Xcode Command Line Tools (`xcode-select --install`)
 
 ```bash
-# Dev mode (starts Phoenix + opens Chrome app window on a random port)
+# Dev mode (starts Phoenix on port 4949 + opens default browser)
 make desktop-dev
 
 # Production build (.app bundle)
@@ -45,6 +45,8 @@ make desktop-build
 # Install to /Applications
 cp -r "Work Tree.app" /Applications/
 ```
+
+The desktop app is a macOS menu bar app. It manages the Phoenix server as a sidecar process and opens your default browser. Menu items: status indicator, Open in Browser, Settings (port, data directory), Quit.
 
 ### Common build issues
 

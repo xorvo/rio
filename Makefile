@@ -1,13 +1,13 @@
-.PHONY: web desktop-dev desktop-build desktop-release test setup clean
+.PHONY: web desktop-dev desktop-build desktop-release desktop-swift test setup clean
 
 # Start Phoenix dev server (SQLite)
 web:
 	mix phx.server
 
-# Desktop development: starts Phoenix and opens Chrome in app mode
+# Desktop development: starts Phoenix and opens default browser
 desktop-dev:
 	@echo "Starting Work Tree in desktop development mode..."
-	@PORT=$$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'); \
+	@PORT=$${PORT:-4949}; \
 	export PORT=$$PORT WORK_TREE_DESKTOP=true PHX_SERVER=true; \
 	echo "Starting Phoenix on port $$PORT..."; \
 	mix phx.server &  PHOENIX_PID=$$!; \
@@ -15,25 +15,29 @@ desktop-dev:
 	  curl -s -o /dev/null "http://localhost:$$PORT" 2>/dev/null && break; \
 	  sleep 0.5; \
 	done; \
-	CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"; \
-	if [ -x "$$CHROME" ]; then \
-	  "$$CHROME" --app="http://localhost:$$PORT" --user-data-dir="$$HOME/Library/Application Support/WorkTree/chrome-profile"; \
-	else \
-	  open "http://localhost:$$PORT"; \
-	fi; \
-	kill $$PHOENIX_PID 2>/dev/null; \
-	wait $$PHOENIX_PID 2>/dev/null
+	open "http://localhost:$$PORT"; \
+	wait $$PHOENIX_PID
 
-# Build desktop .app bundle: compile Phoenix release, assemble macOS app
-desktop-build: desktop-release
+# Compile the Swift menu bar app
+desktop-swift:
+	@echo "Compiling WorkTreeMenuBar..."
+	swiftc native/app-bundle/WorkTreeMenuBar.swift \
+		-parse-as-library \
+		-framework AppKit \
+		-target arm64-apple-macos12.0 \
+		-O \
+		-o native/app-bundle/WorkTreeMenuBar
+
+# Build desktop .app bundle: compile Phoenix release + Swift binary, assemble macOS app
+desktop-build: desktop-release desktop-swift
 	@echo "Assembling Work Tree.app bundle..."
 	rm -rf "Work Tree.app"
 	mkdir -p "Work Tree.app/Contents/MacOS"
 	mkdir -p "Work Tree.app/Contents/Resources"
 	cp native/app-bundle/Info.plist "Work Tree.app/Contents/"
 	cp native/app-bundle/PkgInfo "Work Tree.app/Contents/"
-	cp native/app-bundle/launcher "Work Tree.app/Contents/MacOS/"
-	chmod +x "Work Tree.app/Contents/MacOS/launcher"
+	cp native/app-bundle/WorkTreeMenuBar "Work Tree.app/Contents/MacOS/"
+	chmod +x "Work Tree.app/Contents/MacOS/WorkTreeMenuBar"
 	cp native/app-bundle/icon.icns "Work Tree.app/Contents/Resources/"
 	cp -r _build/prod/rel/desktop "Work Tree.app/Contents/Resources/sidecar"
 	@echo "Built: Work Tree.app"
@@ -60,3 +64,4 @@ clean:
 	mix clean
 	rm -rf _build
 	rm -rf "Work Tree.app"
+	rm -f native/app-bundle/WorkTreeMenuBar
