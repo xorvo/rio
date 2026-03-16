@@ -16,6 +16,8 @@ defmodule Rio.Application do
         {Phoenix.PubSub, name: Rio.PubSub},
         # Auto-archive completed todos after X days
         Rio.AutoArchiver,
+        # Expire stale inbox items
+        Rio.Inbox.InboxExpirer,
         # Start to serve requests, typically the last entry
         RioWeb.Endpoint
       ] ++ sync_children()

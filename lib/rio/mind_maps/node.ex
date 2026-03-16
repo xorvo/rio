@@ -31,6 +31,8 @@ defmodule Rio.MindMaps.Node do
     # Archive fields
     field :archived_at, :utc_datetime
     field :archive_batch_id, Ecto.UUID
+    # Short memorable name for API targeting
+    field :alias, :string
 
     belongs_to :parent, __MODULE__
     has_many :children, __MODULE__, foreign_key: :parent_id
@@ -58,11 +60,13 @@ defmodule Rio.MindMaps.Node do
       :completed_at,
       :locked,
       :archived_at,
-      :archive_batch_id
+      :archive_batch_id,
+      :alias
     ])
     |> validate_required([:title, :path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)
+    |> validate_alias()
   end
 
   @doc """
@@ -87,11 +91,13 @@ defmodule Rio.MindMaps.Node do
       :completed_at,
       :locked,
       :archived_at,
-      :archive_batch_id
+      :archive_batch_id,
+      :alias
     ])
     |> validate_required([:path, :position, :depth])
     |> validate_number(:priority, greater_than_or_equal_to: 0)
     |> validate_url(:link)
+    |> validate_alias()
     |> put_default_title()
   end
 
@@ -101,6 +107,14 @@ defmodule Rio.MindMaps.Node do
       "" -> changeset
       _ -> changeset
     end
+  end
+
+  defp validate_alias(changeset) do
+    changeset
+    |> validate_format(:alias, ~r/^[a-z0-9_-]+$/,
+      message: "must contain only lowercase letters, numbers, hyphens, and underscores"
+    )
+    |> unique_constraint(:alias)
   end
 
   defp validate_url(changeset, field) do

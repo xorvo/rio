@@ -20,6 +20,11 @@ if System.get_env("PHX_SERVER") do
   config :rio, RioWeb.Endpoint, server: true
 end
 
+# API key for inbox ingestion API (optional, open if unset)
+if api_key = System.get_env("RIO_API_KEY") do
+  config :rio, :api_key, api_key
+end
+
 # Sync directory for cloud-drive-based syncing (iCloud, Dropbox, etc.)
 if sync_dir = System.get_env("RIO_SYNC_DIR") do
   config :rio, :sync_dir, sync_dir

@@ -6,6 +6,7 @@ defmodule RioWeb.Components.ToolbarComponent do
 
   attr :ancestors, :list, required: true
   attr :show_archived, :boolean, default: false
+  attr :inbox_count, :integer, default: 0
 
   def toolbar(assigns) do
     ~H"""
@@ -14,9 +15,40 @@ defmodule RioWeb.Components.ToolbarComponent do
         <span class="text-lg">←</span> Home
       </.link>
       <div class="flex-1"></div>
+      <.inbox_button inbox_count={@inbox_count} />
       <.todo_filter_button />
       <.settings_menu show_archived={@show_archived} />
     </div>
+    """
+  end
+
+  attr :inbox_count, :integer, required: true
+
+  defp inbox_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm gap-1"
+      phx-click="toggle_inbox"
+      title="Inbox (b)"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+        />
+      </svg>
+      Inbox
+      <span :if={@inbox_count > 0} class="badge badge-primary badge-xs">{@inbox_count}</span>
+    </button>
     """
   end
 

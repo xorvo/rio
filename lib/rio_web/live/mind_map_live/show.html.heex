@@ -28,6 +28,14 @@
   <RioWeb.Components.ToolbarComponent.toolbar
     ancestors={@ancestors}
     show_archived={@show_archived}
+    inbox_count={@inbox_count}
+  />
+
+  <%!-- Inbox panel --%>
+  <RioWeb.Components.InboxPanelComponent.inbox_panel
+    inbox_open={@inbox_open}
+    inbox_items={@inbox_items}
+    inbox_count={@inbox_count}
   />
 
   <%!-- Canvas --%>
@@ -89,6 +97,7 @@
           node.archived_at != nil && "archived"
         ]}
         style={"left: #{pos.x}px; top: #{pos.y}px; width: #{pos.width}px; height: #{pos.height}px;"}
+        phx-mounted={JS.add_class("node-mounted", transition: {"node-appear", "", ""}, time: 200)}
         phx-hook="NodeDrag"
         data-node-id={node.id}
         data-node-link={node.link}

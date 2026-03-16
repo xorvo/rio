@@ -230,6 +230,11 @@ defmodule RioWeb.MindMapLive.KeyboardHandlers do
     end
   end
 
+  # 'b' to toggle inbox panel
+  def handle_key(socket, %{"key" => "b"}, _opts) do
+    RioWeb.MindMapLive.InboxHandlers.toggle_inbox(socket)
+  end
+
   # Ignore tab
   def handle_key(socket, %{"key" => "Tab"}, _opts), do: {:noreply, socket}
 

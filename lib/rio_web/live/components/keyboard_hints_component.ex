@@ -95,6 +95,10 @@ defmodule RioWeb.Components.KeyboardHintsComponent do
               <span class="kbd kbd-xs">T</span>
               <span class="hints-desc">todo list</span>
             </div>
+            <div class="hints-row">
+              <span class="kbd kbd-xs">b</span>
+              <span class="hints-desc">inbox</span>
+            </div>
           </div>
         </div>
         <div class="hints-footer">

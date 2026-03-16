@@ -26,10 +26,14 @@ defmodule RioWeb.Router do
     live "/node/:id/edit/:node_id", MindMapLive.Show, :edit
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", RioWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", RioWeb.Api do
+    pipe_through [:api, RioWeb.Plugs.ApiAuth]
+
+    post "/inbox", InboxController, :create
+    post "/inbox/batch", InboxController, :batch_create
+    get "/inbox", InboxController, :index
+    patch "/inbox/:id", InboxController, :update
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:rio, :dev_routes) do

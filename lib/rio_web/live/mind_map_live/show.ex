@@ -14,7 +14,8 @@ defmodule RioWeb.MindMapLive.Show do
     InlineEditHandlers,
     LinkHandlers,
     DragHandlers,
-    TodoFilterHandlers
+    TodoFilterHandlers,
+    InboxHandlers
   }
 
   @impl true
@@ -27,6 +28,8 @@ defmodule RioWeb.MindMapLive.Show do
          |> push_navigate(to: ~p"/")}
 
       {:ok, root} ->
+        if connected?(socket), do: Phoenix.PubSub.subscribe(Rio.PubSub, "inbox")
+
         tree = MindMaps.get_subtree(root)
         node_positions = Layout.calculate_positions(tree)
         edges = Layout.calculate_edges(tree, node_positions)
@@ -82,7 +85,11 @@ defmodule RioWeb.MindMapLive.Show do
          # Theme picker
          |> assign(:theme_picker_open, false)
          # Keyboard shortcuts toggle
-         |> assign(:shortcuts_enabled, true)}
+         |> assign(:shortcuts_enabled, true)
+         # Inbox
+         |> assign(:inbox_open, false)
+         |> assign(:inbox_items, [])
+         |> assign(:inbox_count, Rio.Inbox.pending_count())}
     end
   end
 
@@ -275,7 +282,8 @@ defmodule RioWeb.MindMapLive.Show do
         socket.assigns.priority_picker_open ||
         socket.assigns.due_date_picker_open ||
         socket.assigns.link_input_open ||
-        socket.assigns.todo_filter_open
+        socket.assigns.todo_filter_open ||
+        socket.assigns.inbox_open
 
     if modal_active do
       {:noreply, socket}
@@ -411,6 +419,21 @@ defmodule RioWeb.MindMapLive.Show do
 
   def handle_event("todo_filter_confirm", _, socket),
     do: TodoFilterHandlers.confirm_selection(socket)
+
+  # Inbox events - delegate to InboxHandlers
+  def handle_event("toggle_inbox", _, socket), do: InboxHandlers.toggle_inbox(socket)
+
+  def handle_event("inbox_dismiss_item", params, socket),
+    do: InboxHandlers.dismiss_item(socket, params)
+
+  def handle_event("inbox_extend_item", params, socket),
+    do: InboxHandlers.extend_item(socket, params)
+
+  def handle_event("inbox_place_item", params, socket),
+    do: InboxHandlers.place_item(socket, params)
+
+  def handle_event("inbox_quick_capture", params, socket),
+    do: InboxHandlers.quick_capture(socket, params)
 
   # Theme picker events
   def handle_event("open_theme_picker", _, socket) do
@@ -655,6 +678,16 @@ defmodule RioWeb.MindMapLive.Show do
 
   def handle_info(:clear_archive_undo, socket),
     do: ArchiveHandlers.handle_clear_archive_undo(socket)
+
+  # Inbox PubSub update
+  def handle_info({:inbox_updated, _}, socket) do
+    {:noreply,
+     socket
+     |> assign(:inbox_count, Rio.Inbox.pending_count())
+     |> then(fn s ->
+       if s.assigns.inbox_open, do: InboxHandlers.reload_inbox(s), else: s
+     end)}
+  end
 
   # Context menu action handlers
   def handle_info({:close_context_menu, _}, socket) do

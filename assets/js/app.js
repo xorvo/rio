@@ -1236,26 +1236,33 @@ const Hooks = {
       this.el.scrollTop = 0;
       this.el.scrollLeft = 0;
 
+      // Auto-zoom in if zoom level is too small for comfortable editing
+      const minEditZoom = 1.0;
+      const targetZoom =
+        this.zoom < minEditZoom ? minEditZoom : this.zoom;
+
       const rect = this.el.getBoundingClientRect();
       const nodeX = parseFloat(node.style.left) || 0;
       const nodeY = parseFloat(node.style.top) || 0;
       const nodeWidth = parseFloat(node.style.width) || 200;
       const nodeHeight = parseFloat(node.style.height) || 32;
 
-      // Center the node in the viewport
-      const targetViewX = (rect.width - nodeWidth * this.zoom) / 2;
-      const targetViewY = (rect.height - nodeHeight * this.zoom) / 2;
+      // Center the node in the viewport (at target zoom level)
+      const targetViewX = (rect.width - nodeWidth * targetZoom) / 2;
+      const targetViewY = (rect.height - nodeHeight * targetZoom) / 2;
 
-      const targetPanX = targetViewX - nodeX * this.zoom;
-      const targetPanY = targetViewY - nodeY * this.zoom;
+      const targetPanX = targetViewX - nodeX * targetZoom;
+      const targetPanY = targetViewY - nodeY * targetZoom;
 
-      // Animate the pan smoothly
-      this.animatePan(targetPanX, targetPanY, 300);
+      // Animate the pan (and zoom if needed) smoothly
+      this.animatePan(targetPanX, targetPanY, 300, targetZoom);
     },
 
-    animatePan(targetX, targetY, duration) {
+    animatePan(targetX, targetY, duration, targetZoom) {
       const startX = this.panX;
       const startY = this.panY;
+      const startZoom = this.zoom;
+      const endZoom = targetZoom || this.zoom;
       const startTime = performance.now();
 
       const animate = (currentTime) => {
@@ -1267,6 +1274,11 @@ const Hooks = {
 
         this.panX = startX + (targetX - startX) * eased;
         this.panY = startY + (targetY - startY) * eased;
+
+        if (endZoom !== startZoom) {
+          this.zoom = startZoom + (endZoom - startZoom) * eased;
+          this.updateZoomDisplay();
+        }
 
         this.applyTransform();
 
@@ -1340,6 +1352,137 @@ const Hooks = {
       this.applyTransform();
       this.updateZoomDisplay();
       this.saveViewportState();
+    },
+  },
+  InboxItemDrag: {
+    mounted() {
+      this.itemId = this.el.dataset.itemId;
+      this.isDragging = false;
+      this.dragStartX = 0;
+      this.dragStartY = 0;
+      this.dragThreshold = 5;
+      this.ghostElement = null;
+      this.currentTarget = null;
+
+      this.handleMouseDown = this.handleMouseDown.bind(this);
+      this.handleMouseMove = this.handleMouseMove.bind(this);
+      this.handleMouseUp = this.handleMouseUp.bind(this);
+      this.handleKeyDown = this.handleKeyDown.bind(this);
+
+      this.el.addEventListener("mousedown", this.handleMouseDown);
+    },
+
+    destroyed() {
+      this.el.removeEventListener("mousedown", this.handleMouseDown);
+      this.cleanup();
+    },
+
+    handleMouseDown(e) {
+      if (e.button !== 0) return;
+      if (e.target.closest("button")) return;
+
+      this.dragStartX = e.clientX;
+      this.dragStartY = e.clientY;
+
+      window.addEventListener("mousemove", this.handleMouseMove);
+      window.addEventListener("mouseup", this.handleMouseUp);
+      window.addEventListener("keydown", this.handleKeyDown);
+    },
+
+    handleMouseMove(e) {
+      const dx = e.clientX - this.dragStartX;
+      const dy = e.clientY - this.dragStartY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (!this.isDragging && distance > this.dragThreshold) {
+        this.isDragging = true;
+        this.createGhost();
+        document.body.classList.add("dragging-node");
+      }
+
+      if (this.isDragging) {
+        this.ghostElement.style.left = `${e.clientX}px`;
+        this.ghostElement.style.top = `${e.clientY}px`;
+        this.updateDropTargets(e.clientX, e.clientY);
+      }
+    },
+
+    handleMouseUp(e) {
+      if (this.isDragging && this.currentTarget) {
+        this.pushEvent("inbox_place_item", {
+          item_id: this.itemId,
+          parent_id: this.currentTarget,
+        });
+      }
+      this.cleanup();
+    },
+
+    handleKeyDown(e) {
+      if (e.key === "Escape" && this.isDragging) {
+        e.preventDefault();
+        this.cleanup();
+      }
+    },
+
+    createGhost() {
+      const title =
+        this.el.querySelector(".font-medium")?.textContent?.trim() ||
+        "Inbox item";
+      this.ghostElement = document.createElement("div");
+      this.ghostElement.className = "inbox-drag-ghost";
+      this.ghostElement.textContent = title;
+      document.body.appendChild(this.ghostElement);
+    },
+
+    updateDropTargets(clientX, clientY) {
+      const canvas = document.getElementById("mind-map-canvas");
+      if (!canvas) return;
+
+      const nodes = canvas.querySelectorAll(".mind-map-node");
+
+      document
+        .querySelectorAll(".drop-target, .drop-target-invalid")
+        .forEach((el) => {
+          el.classList.remove("drop-target", "drop-target-invalid");
+        });
+
+      this.currentTarget = null;
+
+      for (const node of nodes) {
+        const rect = node.getBoundingClientRect();
+        if (
+          clientX >= rect.left &&
+          clientX <= rect.right &&
+          clientY >= rect.top &&
+          clientY <= rect.bottom
+        ) {
+          node.classList.add("drop-target");
+          this.currentTarget = node.dataset.nodeId;
+          return;
+        }
+      }
+    },
+
+    cleanup() {
+      this.isDragging = false;
+      document.body.classList.remove("dragging-node");
+
+      if (this.ghostElement) {
+        this.ghostElement.remove();
+        this.ghostElement = null;
+      }
+
+      document
+        .querySelectorAll(".drop-target, .drop-target-invalid")
+        .forEach((el) => {
+          el.classList.remove("drop-target", "drop-target-invalid");
+        });
+
+      window.removeEventListener("mousemove", this.handleMouseMove);
+      window.removeEventListener("mouseup", this.handleMouseUp);
+      window.removeEventListener("keydown", this.handleKeyDown);
+
+      this.currentTarget = null;
     },
   },
 };
