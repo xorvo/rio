@@ -89,7 +89,7 @@ defmodule RioWeb.MindMapLive.SearchHandlers do
         0
       end
 
-    {:noreply, assign(socket, :search_selected_index, new_index)}
+    {:noreply, select_and_preview(socket, new_index)}
   end
 
   @doc """
@@ -106,7 +106,7 @@ defmodule RioWeb.MindMapLive.SearchHandlers do
         0
       end
 
-    {:noreply, assign(socket, :search_selected_index, new_index)}
+    {:noreply, select_and_preview(socket, new_index)}
   end
 
   @doc """
@@ -151,33 +151,47 @@ defmodule RioWeb.MindMapLive.SearchHandlers do
     end
   end
 
+  defp select_and_preview(socket, index) do
+    socket = assign(socket, :search_selected_index, index)
+
+    case get_search_result_at(socket, index) do
+      {node, _score, _highlights, _ancestry} ->
+        local_node_ids = MapSet.new(socket.assigns.nodes, & &1.id)
+
+        if MapSet.member?(local_node_ids, node.id) do
+          push_event(socket, "scroll-to-node", %{id: node.id})
+        else
+          socket
+        end
+
+      nil ->
+        socket
+    end
+  end
+
   defp do_go_to_result(socket, index) do
     case get_search_result_at(socket, index) do
       {node, _score, _highlights, _ancestry} ->
-        # Check if node is in the current subtree
         local_node_ids = MapSet.new(socket.assigns.nodes, & &1.id)
         is_local = MapSet.member?(local_node_ids, node.id)
+
+        socket =
+          socket
+          |> assign(:search_open, false)
+          |> assign(:search_query, "")
+          |> assign(:search_results, [])
+          |> assign(:global_search_results, [])
+          |> assign(:search_selected_index, 0)
 
         if is_local do
           {:noreply,
            socket
-           |> assign(:search_open, false)
-           |> assign(:search_query, "")
-           |> assign(:search_results, [])
-           |> assign(:global_search_results, [])
-           |> assign(:search_selected_index, 0)
            |> assign(:focused_node_id, node.id)
-           |> push_event("scroll-to-node", %{id: node.id})}
+           |> push_event("center-node", %{id: node.id})}
         else
-          # Navigate to the node's view
-          {:noreply,
-           socket
-           |> assign(:search_open, false)
-           |> assign(:search_query, "")
-           |> assign(:search_results, [])
-           |> assign(:global_search_results, [])
-           |> assign(:search_selected_index, 0)
-           |> push_navigate(to: "/node/#{node.id}")}
+          # Navigate to the parent's subtree so the node is visible in context
+          target_id = node.parent_id || node.id
+          {:noreply, push_navigate(socket, to: "/node/#{target_id}?focus=#{node.id}")}
         end
 
       nil ->

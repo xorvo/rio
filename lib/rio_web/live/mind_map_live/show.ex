@@ -107,9 +107,18 @@ defmodule RioWeb.MindMapLive.Show do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
-  defp apply_action(socket, :show, _params) do
-    socket
-    |> assign(:modal_action, nil)
+  defp apply_action(socket, :show, params) do
+    socket = assign(socket, :modal_action, nil)
+
+    case params["focus"] do
+      nil ->
+        socket
+
+      focus_id ->
+        socket
+        |> assign(:focused_node_id, focus_id)
+        |> push_event("center-node", %{id: focus_id})
+    end
   end
 
   defp apply_action(socket, :new_child, _params) do

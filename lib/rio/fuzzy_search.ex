@@ -36,8 +36,8 @@ defmodule Rio.FuzzySearch do
 
       nodes
       |> Enum.map(fn node ->
-        {node, score, highlights} = score_node(node, query_lower, query_chars)
         ancestry = Map.get(ancestry_map, node.id, [])
+        {node, score, highlights} = score_node(node, query_lower, query_chars, ancestry)
         {node, score, highlights, ancestry}
       end)
       |> Enum.filter(fn {_node, score, _highlights, _ancestry} -> score > 0 end)
@@ -60,7 +60,7 @@ defmodule Rio.FuzzySearch do
     |> Map.new()
   end
 
-  defp score_node(node, query_lower, query_chars) do
+  defp score_node(node, query_lower, query_chars, ancestry) do
     title = node.title || ""
     title_lower = String.downcase(title)
 
@@ -73,7 +73,22 @@ defmodule Rio.FuzzySearch do
     {body_score, body_highlights} =
       score_field(body_text, body_lower, query_lower, query_chars, :body)
 
-    total_score = title_score + body_score
+    direct_score = title_score + body_score
+
+    # Score query against the full path (ancestor titles + node title)
+    path_score =
+      case ancestry do
+        [] ->
+          0
+
+        ancestor_titles ->
+          path_text = Enum.join(ancestor_titles, " ") <> " " <> title
+          path_lower = String.downcase(path_text)
+          {score, _highlights} = score_field(path_text, path_lower, query_lower, query_chars, :path)
+          score
+      end
+
+    total_score = max(direct_score, path_score)
 
     highlights = %{
       title: title_highlights,
@@ -84,7 +99,12 @@ defmodule Rio.FuzzySearch do
   end
 
   defp score_field(text, text_lower, query_lower, query_chars, field_type) do
-    base_multiplier = if field_type == :title, do: 1.0, else: 0.5
+    base_multiplier =
+      case field_type do
+        :title -> 1.0
+        :path -> 0.7
+        :body -> 0.5
+      end
 
     cond do
       # Exact match
