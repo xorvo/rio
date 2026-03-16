@@ -1,4 +1,4 @@
-defmodule WorkTree.Repo.Migrations.InitialSchema do
+defmodule Rio.Repo.Migrations.InitialSchema do
   @moduledoc """
   Consolidated SQLite migration that creates the full schema.
   Equivalent to all PostgreSQL migrations combined, adapted for SQLite:

@@ -12,51 +12,51 @@ import Config
 # If you use `mix release`, you need to explicitly enable the server
 # by passing the PHX_SERVER=true when you start it:
 #
-#     PHX_SERVER=true bin/work_tree start
+#     PHX_SERVER=true bin/rio start
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
-  config :work_tree, WorkTreeWeb.Endpoint, server: true
+  config :rio, RioWeb.Endpoint, server: true
 end
 
 # Sync directory for cloud-drive-based syncing (iCloud, Dropbox, etc.)
-if sync_dir = System.get_env("WORK_TREE_SYNC_DIR") do
-  config :work_tree, :sync_dir, sync_dir
+if sync_dir = System.get_env("RIO_SYNC_DIR") do
+  config :rio, :sync_dir, sync_dir
 end
 
 # Desktop mode: override DB path and endpoint settings
-if System.get_env("WORK_TREE_DESKTOP") == "true" do
+if System.get_env("RIO_DESKTOP") == "true" do
   db_dir =
-    System.get_env("WORK_TREE_DATA_DIR") ||
+    System.get_env("RIO_DATA_DIR") ||
       Path.join(
         System.get_env("HOME") || "/tmp",
-        "Library/Application Support/WorkTree"
+        "Library/Application Support/Rio"
       )
 
-  config :work_tree, WorkTree.Repo,
-    database: Path.join(db_dir, "work_tree.db"),
+  config :rio, Rio.Repo,
+    database: Path.join(db_dir, "rio.db"),
     pool_size: 1,
     journal_mode: :wal
 
   port = String.to_integer(System.get_env("PORT") || "4949")
 
-  config :work_tree, WorkTreeWeb.Endpoint,
+  config :rio, RioWeb.Endpoint,
     http: [ip: {127, 0, 0, 1}, port: port],
     check_origin: false,
     secret_key_base: Base.encode64(:crypto.strong_rand_bytes(48)),
     server: true
 end
 
-if config_env() == :prod and System.get_env("WORK_TREE_DESKTOP") != "true" do
+if config_env() == :prod and System.get_env("RIO_DESKTOP") != "true" do
   database_path =
     System.get_env("DATABASE_PATH") ||
       Path.join(
         System.get_env("HOME") || "/tmp",
-        "work_tree_prod.db"
+        "rio_prod.db"
       )
 
-  config :work_tree, WorkTree.Repo,
+  config :rio, Rio.Repo,
     database: database_path,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5"),
     journal_mode: :wal
@@ -76,9 +76,9 @@ if config_env() == :prod and System.get_env("WORK_TREE_DESKTOP") != "true" do
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
-  config :work_tree, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+  config :rio, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
-  config :work_tree, WorkTreeWeb.Endpoint,
+  config :rio, RioWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -95,7 +95,7 @@ if config_env() == :prod and System.get_env("WORK_TREE_DESKTOP") != "true" do
   # To get SSL working, you will need to add the `https` key
   # to your endpoint configuration:
   #
-  #     config :work_tree, WorkTreeWeb.Endpoint,
+  #     config :rio, RioWeb.Endpoint,
   #       https: [
   #         ...,
   #         port: 443,
@@ -117,7 +117,7 @@ if config_env() == :prod and System.get_env("WORK_TREE_DESKTOP") != "true" do
   # We also recommend setting `force_ssl` in your config/prod.exs,
   # ensuring no data is ever sent via http, always redirecting to https:
   #
-  #     config :work_tree, WorkTreeWeb.Endpoint,
+  #     config :rio, RioWeb.Endpoint,
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
@@ -127,7 +127,7 @@ if config_env() == :prod and System.get_env("WORK_TREE_DESKTOP") != "true" do
   # In production you need to configure the mailer to use a different adapter.
   # Here is an example configuration for Mailgun:
   #
-  #     config :work_tree, WorkTree.Mailer,
+  #     config :rio, Rio.Mailer,
   #       adapter: Swoosh.Adapters.Mailgun,
   #       api_key: System.get_env("MAILGUN_API_KEY"),
   #       domain: System.get_env("MAILGUN_DOMAIN")

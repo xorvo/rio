@@ -22,7 +22,7 @@ import "phoenix_html";
 // Establish Phoenix Socket and LiveView configuration.
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
-import { hooks as colocatedHooks } from "phoenix-colocated/work_tree";
+import { hooks as colocatedHooks } from "phoenix-colocated/rio";
 import topbar from "../vendor/topbar";
 
 const csrfToken = document
@@ -74,7 +74,7 @@ const Hooks = {
   },
   LocalSettings: {
     mounted() {
-      const STORAGE_KEY = "work_tree:settings";
+      const STORAGE_KEY = "rio:settings";
 
       this.loadSettings = () => {
         try {
@@ -1286,7 +1286,7 @@ const Hooks = {
 
       try {
         // Use sessionStorage for per-tab persistence (not shared across browser sessions)
-        const saved = sessionStorage.getItem(`work_tree:viewport:${this.rootId}`);
+        const saved = sessionStorage.getItem(`rio:viewport:${this.rootId}`);
         if (saved) {
           const state = JSON.parse(saved);
           this.panX = state.panX ?? 0;
@@ -1308,7 +1308,7 @@ const Hooks = {
         try {
           // Use sessionStorage for per-tab persistence (not shared across browser sessions)
           sessionStorage.setItem(
-            `work_tree:viewport:${this.rootId}`,
+            `rio:viewport:${this.rootId}`,
             JSON.stringify({
               panX: this.panX,
               panY: this.panY,

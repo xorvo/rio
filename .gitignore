@@ -37,8 +37,8 @@ npm-debug.log
 /assets/node_modules/
 
 # Desktop app bundle and compiled Swift binary (built by make)
-/Work Tree.app/
-native/app-bundle/WorkTreeMenuBar
+/Rio.app/
+native/app-bundle/RioMenuBar
 
 # SQLite database files
 *.db

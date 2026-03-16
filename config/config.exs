@@ -7,19 +7,19 @@
 # General application configuration
 import Config
 
-config :work_tree,
-  ecto_repos: [WorkTree.Repo],
+config :rio,
+  ecto_repos: [Rio.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true]
 
 # Configures the endpoint
-config :work_tree, WorkTreeWeb.Endpoint,
+config :rio, RioWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: WorkTreeWeb.ErrorHTML, json: WorkTreeWeb.ErrorJSON],
+    formats: [html: RioWeb.ErrorHTML, json: RioWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: WorkTree.PubSub,
+  pubsub_server: Rio.PubSub,
   live_view: [signing_salt: "GBAoWJEF"]
 
 # Configures the mailer
@@ -29,12 +29,12 @@ config :work_tree, WorkTreeWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :work_tree, WorkTree.Mailer, adapter: Swoosh.Adapters.Local
+config :rio, Rio.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",
-  work_tree: [
+  rio: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
@@ -44,7 +44,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "4.1.7",
-  work_tree: [
+  rio: [
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/css/app.css

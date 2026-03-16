@@ -1,4 +1,4 @@
-# Work Tree
+# Rio
 
 A real-time mind mapping application built with Phoenix LiveView and SQLite. Runs as a web app or a native macOS desktop app (Chrome app mode).
 
@@ -20,14 +20,14 @@ A real-time mind mapping application built with Phoenix LiveView and SQLite. Run
 
 ## Architecture
 
-Work Tree is a single Phoenix LiveView + SQLite codebase. The native macOS app bundles the Phoenix release in a `.app` and opens Chrome in app mode.
+Rio is a single Phoenix LiveView + SQLite codebase. The native macOS app bundles the Phoenix release in a `.app` and opens Chrome in app mode.
 
 ```mermaid
 graph TB
     subgraph "Native macOS App (.app bundle)"
         Launcher["Shell Script Launcher"]
         Sidecar["Phoenix Release<br/>(Bundled ERTS + BEAM)"]
-        SQLiteD[(SQLite DB<br/>~/Library/Application Support/WorkTree/)]
+        SQLiteD[(SQLite DB<br/>~/Library/Application Support/Rio/)]
 
         Launcher -->|"spawns on random port"| Sidecar
         Sidecar -->|"Ecto.Adapters.SQLite3"| SQLiteD
@@ -47,7 +47,7 @@ graph TB
         direction TB
         LiveView["Phoenix LiveView UI<br/>Templates, Components, Handlers"]
         Context["MindMaps Context<br/>CRUD, Tree Ops, Search, Events"]
-        Repo["WorkTree.Repo<br/>(SQLite3 adapter)"]
+        Repo["Rio.Repo<br/>(SQLite3 adapter)"]
 
         LiveView --> Context
         Context --> Repo
@@ -61,11 +61,11 @@ graph TB
 
 | Layer | What | Key files |
 |-------|------|-----------|
-| **UI** | LiveView pages, components, handlers | `lib/work_tree_web/live/` |
-| **Context** | Business logic, CRUD, tree operations | `lib/work_tree/mind_maps/` |
-| **Search** | FTS5 full-text search + Jaro-Winkler fuzzy matching | `lib/work_tree/mind_maps/search.ex`, `lib/work_tree/fuzzy_search.ex` |
-| **Events** | PubSub event tracking | `lib/work_tree/events/` |
-| **Repo** | SQLite3 adapter with materialized paths | `lib/work_tree/repo.ex`, `lib/work_tree/ecto/path_type.ex` |
+| **UI** | LiveView pages, components, handlers | `lib/rio_web/live/` |
+| **Context** | Business logic, CRUD, tree operations | `lib/rio/mind_maps/` |
+| **Search** | FTS5 full-text search + Jaro-Winkler fuzzy matching | `lib/rio/mind_maps/search.ex`, `lib/rio/fuzzy_search.ex` |
+| **Events** | PubSub event tracking | `lib/rio/events/` |
+| **Repo** | SQLite3 adapter with materialized paths | `lib/rio/repo.ex`, `lib/rio/ecto/path_type.ex` |
 | **Config** | Base config + env-specific overlays | `config/` |
 
 ### What differs between web and desktop
@@ -73,16 +73,16 @@ graph TB
 | Concern | Web | Desktop |
 |---------|-----|---------|
 | **Binding** | `127.0.0.1` (dev), configurable (prod) | `127.0.0.1` only |
-| **DB location** | Local file (`work_tree_dev.db`) | `~/Library/Application Support/WorkTree/` |
+| **DB location** | Local file (`rio_dev.db`) | `~/Library/Application Support/Rio/` |
 | **Shell** | None (browser) | Chrome app mode (standalone window) |
-| **Env flag** | Default | `WORK_TREE_DESKTOP=true` |
+| **Env flag** | Default | `RIO_DESKTOP=true` |
 
 ## Project structure
 
 ```
-work_tree/
+rio/
 ├── lib/
-│   ├── work_tree/                  # Core application
+│   ├── rio/                  # Core application
 │   │   ├── mind_maps/              # MindMaps context (CRUD, tree, search, layout)
 │   │   ├── events/                 # Event pub/sub system
 │   │   ├── ecto/                   # Custom Ecto types (PathType)
@@ -90,7 +90,7 @@ work_tree/
 │   │   ├── application.ex          # OTP supervisor, auto-migration
 │   │   ├── auto_archiver.ex        # Auto-archive completed todos
 │   │   └── fuzzy_search.ex         # Jaro-Winkler fuzzy search
-│   └── work_tree_web/              # Web layer
+│   └── rio_web/              # Web layer
 │       ├── live/                   # LiveView pages & components
 │       │   ├── mind_map_live/      # Main mind map view + handler modules
 │       │   └── components/         # Reusable UI components
@@ -144,12 +144,12 @@ make desktop-dev
 make desktop-build
 ```
 
-The built app is at `Work Tree.app` in the project root.
+The built app is at `Rio.app` in the project root.
 
 To install:
 
 ```bash
-cp -r "Work Tree.app" /Applications/
+cp -r "Rio.app" /Applications/
 ```
 
 ### Build targets
@@ -168,11 +168,11 @@ cp -r "Work Tree.app" /Applications/
 
 ### Data location
 
-The SQLite database lives at `~/Library/Application Support/WorkTree/work_tree.db`. This directory is outside the `.app` bundle and is never touched by installs or updates. The app auto-creates it on first launch if it doesn't exist.
+The SQLite database lives at `~/Library/Application Support/Rio/rio.db`. This directory is outside the `.app` bundle and is never touched by installs or updates. The app auto-creates it on first launch if it doesn't exist.
 
-Chrome window preferences (size, position) are stored at `~/Library/Application Support/WorkTree/chrome-profile/`.
+Chrome window preferences (size, position) are stored at `~/Library/Application Support/Rio/chrome-profile/`.
 
-To override the data directory: set the `WORK_TREE_DATA_DIR` environment variable.
+To override the data directory: set the `RIO_DATA_DIR` environment variable.
 
 ### Building a new release
 
@@ -180,14 +180,14 @@ To override the data directory: set the `WORK_TREE_DATA_DIR` environment variabl
 # Build the .app bundle (compiles Phoenix release + assembles bundle)
 make desktop-build
 
-# Output: Work Tree.app in project root
+# Output: Rio.app in project root
 ```
 
 ### Installing / updating
 
 ```bash
 # Install or update (replaces the app binary, data is preserved)
-cp -r "Work Tree.app" /Applications/
+cp -r "Rio.app" /Applications/
 ```
 
 ### Version bumps
@@ -202,13 +202,13 @@ Update the version in these files before building:
 Export your data to a portable `.wtx` file:
 
 ```bash
-mix work_tree.export --output backup.wtx
+mix rio.export --output backup.wtx
 ```
 
 On the new machine:
 
 ```bash
-mix work_tree.import backup.wtx --mode full
+mix rio.import backup.wtx --mode full
 ```
 
-Or simply copy `~/Library/Application Support/WorkTree/` to the new machine.
+Or simply copy `~/Library/Application Support/Rio/` to the new machine.

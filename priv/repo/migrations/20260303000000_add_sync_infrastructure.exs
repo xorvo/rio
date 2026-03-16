@@ -1,4 +1,4 @@
-defmodule WorkTree.Repo.Migrations.AddSyncInfrastructure do
+defmodule Rio.Repo.Migrations.AddSyncInfrastructure do
   use Ecto.Migration
 
   def change do

@@ -1,4 +1,4 @@
-defmodule WorkTree.Repo.Migrations.AddFts5 do
+defmodule Rio.Repo.Migrations.AddFts5 do
   @moduledoc """
   Adds FTS5 full-text search index on nodes for fast title and body search.
   Uses content-sync triggers to keep the FTS index up to date automatically.

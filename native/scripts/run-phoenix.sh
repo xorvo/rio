@@ -14,7 +14,7 @@ fi
 # Navigate to the project root (parent of native/)
 cd "$(dirname "$0")/../.."
 
-export WORK_TREE_DESKTOP=true
+export RIO_DESKTOP=true
 export PHX_SERVER=true
 # PORT is passed in from the launcher
 export PORT="${PORT:-4000}"

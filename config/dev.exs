@@ -1,8 +1,8 @@
 import Config
 
 # Configure your database
-config :work_tree, WorkTree.Repo,
-  database: Path.expand("../work_tree_dev.db", __DIR__),
+config :rio, Rio.Repo,
+  database: Path.expand("../rio_dev.db", __DIR__),
   pool_size: 5,
   journal_mode: :wal,
   stacktrace: true,
@@ -14,7 +14,7 @@ config :work_tree, WorkTree.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :work_tree, WorkTreeWeb.Endpoint,
+config :rio, RioWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || "4000")],
@@ -23,8 +23,8 @@ config :work_tree, WorkTreeWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "94k9A1hai5gototWw81CMv1LtrhteyqgPM2mejvTyDAXwWfECgec9M7gO/kJlLR3",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:work_tree, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:work_tree, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:rio, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:rio, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -51,18 +51,18 @@ config :work_tree, WorkTreeWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :work_tree, WorkTreeWeb.Endpoint,
+config :rio, RioWeb.Endpoint,
   live_reload: [
     web_console_logger: true,
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/work_tree_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$"
+      ~r"lib/rio_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :work_tree, dev_routes: true
+config :rio, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"

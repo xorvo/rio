@@ -6,9 +6,9 @@ web:
 
 # Desktop development: starts Phoenix and opens default browser
 desktop-dev:
-	@echo "Starting Work Tree in desktop development mode..."
+	@echo "Starting Rio in desktop development mode..."
 	@PORT=$${PORT:-4949}; \
-	export PORT=$$PORT WORK_TREE_DESKTOP=true PHX_SERVER=true; \
+	export PORT=$$PORT RIO_DESKTOP=true PHX_SERVER=true; \
 	echo "Starting Phoenix on port $$PORT..."; \
 	mix phx.server &  PHOENIX_PID=$$!; \
 	for i in $$(seq 1 60); do \
@@ -20,36 +20,36 @@ desktop-dev:
 
 # Compile the Swift menu bar app
 desktop-swift:
-	@echo "Compiling WorkTreeMenuBar..."
-	swiftc native/app-bundle/WorkTreeMenuBar.swift \
+	@echo "Compiling RioMenuBar..."
+	swiftc native/app-bundle/RioMenuBar.swift \
 		-parse-as-library \
 		-framework AppKit \
 		-target arm64-apple-macos12.0 \
 		-O \
-		-o native/app-bundle/WorkTreeMenuBar
+		-o native/app-bundle/RioMenuBar
 
 # Build desktop .app bundle: compile Phoenix release + Swift binary, assemble macOS app
 desktop-build: desktop-release desktop-swift
-	@echo "Assembling Work Tree.app bundle..."
-	rm -rf "Work Tree.app"
-	mkdir -p "Work Tree.app/Contents/MacOS"
-	mkdir -p "Work Tree.app/Contents/Resources"
-	cp native/app-bundle/Info.plist "Work Tree.app/Contents/"
-	cp native/app-bundle/PkgInfo "Work Tree.app/Contents/"
-	cp native/app-bundle/WorkTreeMenuBar "Work Tree.app/Contents/MacOS/"
-	chmod +x "Work Tree.app/Contents/MacOS/WorkTreeMenuBar"
-	cp native/app-bundle/icon.icns "Work Tree.app/Contents/Resources/"
-	cp -r _build/prod/rel/desktop "Work Tree.app/Contents/Resources/sidecar"
-	@echo "Built: Work Tree.app"
-	@echo "Install with: cp -r \"Work Tree.app\" /Applications/"
+	@echo "Assembling Rio.app bundle..."
+	rm -rf "Rio.app"
+	mkdir -p "Rio.app/Contents/MacOS"
+	mkdir -p "Rio.app/Contents/Resources"
+	cp native/app-bundle/Info.plist "Rio.app/Contents/"
+	cp native/app-bundle/PkgInfo "Rio.app/Contents/"
+	cp native/app-bundle/RioMenuBar "Rio.app/Contents/MacOS/"
+	chmod +x "Rio.app/Contents/MacOS/RioMenuBar"
+	cp native/app-bundle/icon.icns "Rio.app/Contents/Resources/"
+	cp -r _build/prod/rel/desktop "Rio.app/Contents/Resources/sidecar"
+	@echo "Built: Rio.app"
+	@echo "Install with: cp -r \"Rio.app\" /Applications/"
 
 # Build the Phoenix release for desktop (sidecar binary)
 desktop-release:
 	@echo "Building Phoenix release for desktop..."
-	MIX_ENV=prod WORK_TREE_DESKTOP=true mix deps.get --only prod
-	MIX_ENV=prod WORK_TREE_DESKTOP=true mix compile
-	MIX_ENV=prod WORK_TREE_DESKTOP=true mix assets.deploy
-	MIX_ENV=prod WORK_TREE_DESKTOP=true mix release desktop --overwrite
+	MIX_ENV=prod RIO_DESKTOP=true mix deps.get --only prod
+	MIX_ENV=prod RIO_DESKTOP=true mix compile
+	MIX_ENV=prod RIO_DESKTOP=true mix assets.deploy
+	MIX_ENV=prod RIO_DESKTOP=true mix release desktop --overwrite
 
 # Run tests
 test:
@@ -63,5 +63,5 @@ setup:
 clean:
 	mix clean
 	rm -rf _build
-	rm -rf "Work Tree.app"
-	rm -f native/app-bundle/WorkTreeMenuBar
+	rm -rf "Rio.app"
+	rm -f native/app-bundle/RioMenuBar
