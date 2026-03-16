@@ -131,18 +131,19 @@ defmodule WorkTree.FuzzySearch do
 
   # Returns true if the Jaro-Winkler similarity exceeds the near-match threshold
   defp jaro_winkler_near_match?(text_lower, query_lower) do
-    TheFuzz.Similarity.JaroWinkler.compare(text_lower, query_lower) > 0.85
+    (jaro_winkler_compare(text_lower, query_lower) || 0.0) > 0.85
   end
 
   # Find the best Jaro-Winkler score between the query and any word in the text
   defp best_word_jaro_winkler(text_lower, query_lower) do
     text_lower
-    |> String.split(~r/[\s\-_]+/)
-    |> Enum.map(fn word ->
-      TheFuzz.Similarity.JaroWinkler.compare(word, query_lower)
-    end)
+    |> String.split(~r/[\s\-_]+/, trim: true)
+    |> Enum.map(fn word -> jaro_winkler_compare(word, query_lower) || 0.0 end)
     |> Enum.max(fn -> 0.0 end)
   end
+
+  # TheFuzz returns nil for empty strings; normalize to 0.0
+  defp jaro_winkler_compare(a, b), do: TheFuzz.Similarity.JaroWinkler.compare(a, b)
 
   defp word_start_match?(text_lower, query_lower) do
     # Check if any word in the text starts with the query
