@@ -80,7 +80,9 @@ defmodule WorkTreeWeb.MindMapLive.Show do
          |> assign(:archive_batch, nil)
          |> assign(:archive_undo_timer, nil)
          # Theme picker
-         |> assign(:theme_picker_open, false)}
+         |> assign(:theme_picker_open, false)
+         # Keyboard shortcuts toggle
+         |> assign(:shortcuts_enabled, true)}
     end
   end
 
@@ -228,8 +230,37 @@ defmodule WorkTreeWeb.MindMapLive.Show do
     {:noreply, push_navigate(socket, to: ~p"/node/#{id}")}
   end
 
+  def handle_event("restore_settings", settings, socket) when is_map(settings) do
+    socket =
+      Enum.reduce(settings, socket, fn
+        {"shortcuts_enabled", value}, acc when is_boolean(value) ->
+          acc
+          |> assign(:shortcuts_enabled, value)
+          |> push_event("shortcuts_enabled_changed", %{enabled: value})
+
+        _unknown, acc ->
+          acc
+      end)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle_shortcuts", _params, socket) do
+    enabled = !socket.assigns.shortcuts_enabled
+
+    {:noreply,
+     socket
+     |> assign(:shortcuts_enabled, enabled)
+     |> push_event("shortcuts_enabled_changed", %{enabled: enabled})
+     |> push_event("save_setting", %{key: "shortcuts_enabled", value: enabled})}
+  end
+
   def handle_event("keydown", %{"isInputTarget" => true}, socket) do
     # Ignore keyboard events that originated from input/textarea elements
+    {:noreply, socket}
+  end
+
+  def handle_event("keydown", _event, %{assigns: %{shortcuts_enabled: false}} = socket) do
     {:noreply, socket}
   end
 

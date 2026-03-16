@@ -8,6 +8,7 @@
   data-root-id={@root.id}
 >
   <div id="disable-tab-helper" phx-hook="DisableTab" style="display:none;"></div>
+  <div id="local-settings" phx-hook="LocalSettings" style="display:none;"></div>
   <%!-- Breadcrumb navigation --%>
   <div :if={@ancestors != []} class="mind-map-breadcrumb">
     <.link navigate={~p"/"} class="text-base-content/60 hover:text-primary">
@@ -264,6 +265,37 @@
       </svg>
     </button>
   </div>
+
+  <%!-- Keyboard shortcuts toggle indicator --%>
+  <button
+    id="shortcuts-toggle"
+    phx-click="toggle_shortcuts"
+    class={[
+      "fixed bottom-4 left-3 z-50 flex items-center gap-1.5 px-2 py-1.5 rounded-full cursor-pointer select-none transition-all duration-200 shadow-sm border",
+      if(@shortcuts_enabled,
+        do: "bg-base-100/90 border-base-300 text-base-content/60 hover:text-base-content",
+        else: "bg-warning/15 border-warning/40 text-warning hover:bg-warning/25"
+      )
+    ]}
+    title={if @shortcuts_enabled, do: "Keyboard shortcuts enabled — click to disable", else: "Keyboard shortcuts disabled — click to enable"}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      class="w-3.5 h-3.5"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M2 4.75A2.75 2.75 0 0 1 4.75 2h10.5A2.75 2.75 0 0 1 18 4.75v6.5A2.75 2.75 0 0 1 15.25 14H4.75A2.75 2.75 0 0 1 2 11.25v-6.5Zm2.75-1.25c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75ZM5.5 6a.75.75 0 0 0 0 1.5h.25a.75.75 0 0 0 0-1.5H5.5Zm3 0a.75.75 0 0 0 0 1.5h.25a.75.75 0 0 0 0-1.5H8.5Zm3 0a.75.75 0 0 0 0 1.5h.25a.75.75 0 0 0 0-1.5h-.25Zm-6 2.5a.75.75 0 0 0 0 1.5h.25a.75.75 0 0 0 0-1.5H5.5Zm3 0a.75.75 0 0 0 0 1.5h3a.75.75 0 0 0 0-1.5h-3Zm6 0a.75.75 0 0 0 0 1.5h.25a.75.75 0 0 0 0-1.5h-.25Z"
+        clip-rule="evenodd"
+      />
+    </svg>
+    <div class={[
+      "w-2 h-2 rounded-full transition-colors duration-200",
+      if(@shortcuts_enabled, do: "bg-success", else: "bg-warning animate-pulse")
+    ]} />
+  </button>
 
   <%!-- Keyboard shortcuts hint --%>
   <WorkTreeWeb.Components.KeyboardHintsComponent.keyboard_hints hints_expanded={@hints_expanded} />

@@ -72,6 +72,31 @@ const Hooks = {
       window.removeEventListener("keydown", this.handleKeydown);
     },
   },
+  LocalSettings: {
+    mounted() {
+      const STORAGE_KEY = "work_tree:settings";
+
+      this.loadSettings = () => {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        } catch {
+          return {};
+        }
+      };
+
+      this.saveSettings = (settings) => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      };
+
+      this.handleEvent("save_setting", ({ key, value }) => {
+        const settings = this.loadSettings();
+        settings[key] = value;
+        this.saveSettings(settings);
+      });
+
+      this.pushEvent("restore_settings", this.loadSettings());
+    },
+  },
   NodeContextMenu: {
     mounted() {
       // Handle click with modifier key detection
@@ -818,8 +843,16 @@ const Hooks = {
       // Focus the container on initial load for keyboard shortcuts
       this.el.focus();
 
+      // Track shortcuts enabled state (synced from LiveView via LocalSettings hook)
+      this.shortcutsEnabled = true;
+
+      this.handleEvent("shortcuts_enabled_changed", ({ enabled }) => {
+        this.shortcutsEnabled = enabled;
+      });
+
       // Handle Cmd+P / Ctrl+P to open search (need to prevent browser print dialog)
       this.handleCmdP = (e) => {
+        if (!this.shortcutsEnabled) return;
         if ((e.metaKey || e.ctrlKey) && e.key === "p") {
           e.preventDefault();
           this.pushEvent("open_search", {});
@@ -1019,6 +1052,8 @@ const Hooks = {
     },
 
     handleKeyDown(e) {
+      if (!this.shortcutsEnabled) return;
+
       // Check if target is an input/textarea (with safety check for non-element targets)
       const isInputTarget = e.target?.matches?.("input, textarea");
 
