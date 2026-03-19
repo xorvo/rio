@@ -197,8 +197,8 @@ defmodule RioWeb.MindMapLive.KeyboardHandlers do
     RioWeb.MindMapLive.TodoFilterHandlers.open_todo_filter(socket)
   end
 
-  # 'cmd+p' to open the search modal
-  def handle_key(socket, %{"key" => "p", "metaKey" => true}, _opts) do
+  # 'cmd+p' or 'cmd+k' to open the search modal
+  def handle_key(socket, %{"key" => key, "metaKey" => true}, _opts) when key in ["p", "k"] do
     {:noreply, assign(socket, :search_open, true)}
   end
 
